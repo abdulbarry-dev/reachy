@@ -60,6 +60,7 @@ jobs:
         run: |
           npx vercel deploy \
             --prod \
+            --yes \
             --token=${{ secrets.VERCEL_TOKEN }} \
             --build-env VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
             --build-env VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
