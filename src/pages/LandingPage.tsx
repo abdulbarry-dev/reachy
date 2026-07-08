@@ -85,15 +85,16 @@ function useCounter(target: number, duration = 1400, started = false) {
   useEffect(() => {
     if (!started) return
     let startTime: number | null = null
+    let raf: number
     const step = (timestamp: number) => {
       if (!startTime) startTime = timestamp
       const progress = Math.min((timestamp - startTime) / duration, 1)
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3)
       setValue(Math.floor(eased * target))
-      if (progress < 1) requestAnimationFrame(step)
+      if (progress < 1) raf = requestAnimationFrame(step)
     }
-    requestAnimationFrame(step)
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
   }, [target, duration, started])
   return value
 }
@@ -136,6 +137,43 @@ function useTilt() {
 
   return { ref, rotateX, rotateY }
 }
+
+// ─── SVG Logo (hoisted — stable reference) ────────────────────────────────────
+const LogoSvg = ({ className }: { className?: string }) => (
+  <svg className={className ?? 'lp-logo-svg'} viewBox="0 0 340 350" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(0.000000,350.000000) scale(0.100000,-0.100000)" fill="currentColor">
+      <path d="M511 3255 c-82 -187 -117 -386 -108 -623 8 -224 65 -406 173 -553 44 -61 163 -172 214 -201 22 -13
+40 -25 40 -28 0 -3 -35 -13 -77 -23 -200 -45 -406 -177 -526 -337 -43 -57 -147 -247 -147 -269 0 -7
+30 -11 83 -11 107 0 252 -22 352 -54 108 -34 253 -118 332 -191 61 -56 66 -64 70 -111 6 -55 -9 -94
+-54 -148 -56 -68 -186 -147 -322 -196 -94 -35 -93 -36 -61 75 30 107 94 227 156 294 l55 59 -28 20
+c-43 30 -90 52 -110 52 -36 0 -135 -126 -178 -226 -28 -65 -65 -175 -79 -239 -19 -81 -40 -254 -32
+-262 10 -10 155 15 253 43 48 14 138 49 198 78 171 82 276 171 331 279 14 26 29 45 34 42 5 -3 26
+-35 46 -71 55 -99 93 -228 112 -386 13 -114 19 -137 31 -133 43 17 207 123 267 173 133 112 248 281
+303 448 20 60 35 141 46 256 l6 56 77 58 c105 80 301 271 377 369 156 200 260 407 330 660 37 131
+64 184 121 234 50 44 107 65 206 77 32 3 58 10 58 14 0 18 -68 96 -110 127 -57 40 -72 55 -121 121
+-45 59 -106 102 -183 129 -66 23 -207 22 -296 -1 -244 -65 -545 -188 -684 -281 l-53 -35 -109 66
+c-60 36 -154 88 -209 116 -162 82 -254 136 -361 214 -136 99 -237 200 -313 314 -35 52 -64 96 -66
+98 -1 1 -21 -40 -44 -93z m174 -333 c112 -106 266 -207 540 -353 382 -204 489 -298 563 -498 20 -53
+26 -91 30 -197 7 -191 -22 -318 -99 -432 l-31 -45 34 29 c50 43 118 126 159 195 48 79 79 175 89
+278 l9 85 102 102 102 103 46 -39 c25 -22 47 -38 49 -36 3 4 72 305 72 317 0 7 -309 -68 -319 -78
+-3 -2 14 -23 37 -46 l42 -43 -79 -78 c-43 -43 -81 -74 -83 -70 -3 5 -11 27 -18 49 -18 57 -55 120
+-118 199 -64 80 -68 70 57 134 165 86 485 196 602 209 31 3 72 3 91 -1 50 -9 121 -59 153 -108 l28
+-42 -24 -15 c-102 -66 -148 -145 -211 -359 -49 -167 -98 -283 -172 -407 -198 -331 -526 -605 -1001
+-837 l-148 -72 -34 40 c-19 21 -46 54 -60 72 l-26 33 100 102 c117 119 156 176 185 270 52 173 -14
+357 -167 464 l-29 21 59 78 c33 44 114 136 182 205 l123 126 -53 26 c-108 54 -98 56 -189 -31 -70
+-67 -185 -202 -254 -298 l-21 -29 -81 49 c-122 74 -214 171 -267 281 -41 87 -59 135 -48 135 3 0
+32 -25 66 -55 42 -38 99 -74 182 -115 170 -83 155 -83 187 4 l26 74 -71 36 c-39 20 -115 57 -170
+82 -54 25 -123 55 -153 67 -30 12 -67 27 -83 34 -40 17 -65 42 -65 65 0 13 3 28 7 33 4 6 31 33
+60 61 68 67 127 145 161 213 15 30 55 137 89 238 34 101 66 194 72 206 20 46 66 93 113 116 35 17
+42 18 185 18 142 0 150 -1 185 -18 47 -23 93 -70 113 -116 6 -12 38 -105 72 -206 34 -101 74 -208
+89 -238 34 -68 93 -146 161 -213 29 -28 56 -55 60 -61 4 -5 7 -20 7 -33 0 -23 -25 -48 -65 -65
+-16 -7 -53 -22 -83 -34 -30 -12 -99 -42 -153 -67 -55 -25 -131 -62 -170 -82 l-71 -36 26 -74 c27
+-77 25 -76 87 -41 199 112 547 299 705 380 178 91 264 159 301 237 14 30 42 116 51 157 8 36 8
+111 0 148 -9 40 -37 127 -51 157 -37 78 -123 146 -301 237 -158 81 -506 268 -705 380 -62 35 -60
+36 -87 -41z"/>
+    </g>
+  </svg>
+)
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -257,15 +295,6 @@ export function LandingPage() {
 
   const safetyInfo = getSafetyInfo(dailySends)
 
-  // SVG logo path (shared between header and footer)
-  const LogoSvg = ({ className }: { className?: string }) => (
-    <svg className={className ?? 'lp-logo-svg'} viewBox="0 0 340 350" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(0.000000,350.000000) scale(0.100000,-0.100000)" fill="currentColor">
-        <path d="M511 3255 c-82 -187 -117 -386 -108 -623 8 -224 65 -406 173 -553 44 -61 163 -172 214 -201 22 -13 40 -25 40 -28 0 -3 -35 -13 -77 -23 -200 -45 -406 -177 -526 -337 -43 -57 -147 -247 -147 -269 0 -7 30 -11 83 -11 107 0 252 -22 352 -54 108 -34 253 -118 332 -191 61 -56 66 -64 70 -111 6 -55 -9 -94 -54 -148 -56 -68 -186 -147 -322 -196 -94 -35 -93 -36 -61 75 30 107 94 227 156 294 l55 59 -28 20 c-43 30 -90 52 -110 52 -36 0 -135 -126 -178 -226 -28 -65 -65 -175 -79 -239 -19 -81 -40 -254 -32 -262 10 -10 155 15 253 43 48 14 138 49 198 78 171 82 276 171 331 279 14 26 29 45 34 42 5 -3 26 -35 46 -71 55 -99 93 -228 112 -386 13 -114 19 -137 31 -133 43 17 207 123 267 173 133 112 248 281 303 448 20 60 35 141 46 256 l6 56 77 58 c105 80 301 271 377 369 156 200 260 407 330 660 37 131 64 184 121 234 50 44 107 65 206 77 32 3 58 10 58 14 0 18 -68 96 -110 127 -57 40 -72 55 -121 121 -45 59 -106 102 -183 129 -66 23 -207 22 -296 -1 -244 -65 -545 -188 -684 -281 l-53 -35 -109 66 c-60 36 -154 88 -209 116 -162 82 -254 136 -361 214 -136 99 -237 200 -313 314 -35 52 -64 96 -66 98 -1 1 -21 -40 -44 -93z m174 -333 c112 -106 266 -207 540 -353 382 -204 489 -298 563 -498 20 -53 26 -91 30 -197 7 -191 -22 -318 -99 -432 l-31 -45 34 29 c50 43 118 126 159 195 48 79 79 175 89 278 l9 85 102 102 102 103 46 -39 c25 -22 47 -38 49 -36 3 4 72 305 72 317 0 7 -309 -68 -319 -78 -3 -2 14 -23 37 -46 l42 -43 -79 -78 c-43 -43 -81 -74 -83 -70 -3 5 -11 27 -18 49 -18 57 -55 120 -118 199 -64 80 -68 70 57 134 165 86 485 196 602 209 31 3 72 3 91 -1 50 -9 121 -59 153 -108 l28 -42 -24 -15 c-102 -66 -148 -145 -211 -359 -49 -167 -98 -283 -172 -407 -198 -331 -526 -605 -1001 -837 l-148 -72 -34 40 c-19 21 -46 54 -60 72 l-26 33 100 102 c117 119 156 176 185 270 52 173 -14 357 -167 464 l-29 21 59 78 c33 44 114 136 182 205 l123 126 -53 26 c-108 54 -98 56 -189 -31 -70 -67 -185 -202 -254 -298 l-21 -29 -81 49 c-122 74 -214 171 -267 281 -41 87 -59 135 -48 135 3 0 32 -25 66 -55 42 -38 99 -74 182 -115 170 -83 155 -83 187 4 l26 74 -71 32 c-103 47 -228 132 -281 191 -55 62 -112 173 -127 251 -11 53 -5 208 8 208 3 0 42 -35 88 -78z m434 -1238 c22 -19 49 -54 60 -78 28 -57 28 -155 1 -215 -20 -42 -194 -231 -233 -253 -15 -8 -30 -2 -73 26 -30 20 -54 43 -54 51 0 36 165 386 228 483 19 29 25 28 71 -14z m-279 -9 c0 -3 -19 -42 -42 -88 -23 -45 -63 -131 -89 -192 -26 -60 -51 -109 -56 -107 -4 1 -41 13 -81 27 -40 14 -106 31 -147 38 -41 6 -75 15 -75 19 0 4 28 37 61 73 95 101 218 177 354 216 68 20 75 21 75 14z m851 -826 c-38 -150 -138 -313 -247 -401 -48 -39 -64 -41 -64 -6 0 28 -67 227 -87 257 -12 18 -13 26 -4 29 27 9 320 161 366 190 28 17 51 27 53 22 2 -5 -6 -46 -17 -91z"/>
-      </g>
-    </svg>
-  )
-
   return (
     <div className="landing-wrapper min-vh-100">
       {/* Background Blobs */}
@@ -286,7 +315,7 @@ export function LandingPage() {
             <span>Reachy</span>
           </a>
 
-          <button className="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#lpNavbarNav">
+          <button className="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#lpNavbarNav" aria-label="Toggle navigation" aria-expanded="false" aria-controls="lpNavbarNav">
             <span className="navbar-toggler-icon" />
           </button>
 
@@ -918,12 +947,12 @@ export function LandingPage() {
                   </p>
                   <div className="d-flex gap-3 text-secondary" style={{ fontSize: '1.25rem' }}>
                     {[
-                      { icon: 'bi-github', href: 'https://github.com/abdulbarry-dev/reachy' },
-                      { icon: 'bi-twitter-x', href: 'https://x.com/AbdulbarryG' },
-                      { icon: 'bi-linkedin', href: 'https://www.linkedin.com/in/abdulbarryguenichi/' },
-                    ].map(({ icon, href }) => (
-                      <a key={icon} href={href} target="_blank" rel="noopener noreferrer" className="text-decoration-none text-secondary">
-                        <motion.i className={`bi ${icon}`} whileHover={{ color: '#3AB397', scale: 1.2 }} />
+                      { icon: 'bi-github', href: 'https://github.com/abdulbarry-dev/reachy', label: 'GitHub' },
+                      { icon: 'bi-twitter-x', href: 'https://x.com/AbdulbarryG', label: 'X (Twitter)' },
+                      { icon: 'bi-linkedin', href: 'https://www.linkedin.com/in/abdulbarryguenichi/', label: 'LinkedIn' },
+                    ].map(({ icon, href, label }) => (
+                      <a key={icon} href={href} target="_blank" rel="noopener noreferrer" className="text-decoration-none text-secondary" aria-label={label}>
+                        <motion.i className={`bi ${icon}`} aria-hidden="true" whileHover={{ color: '#3AB397', scale: 1.2 }} />
                       </a>
                     ))}
                   </div>

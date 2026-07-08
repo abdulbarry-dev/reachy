@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { Button, Card, Col, Row } from 'react-bootstrap'
-import { Link } from 'react-router-dom'
+import { Card, Col, Row } from 'react-bootstrap'
+import { Link, useNavigate } from 'react-router-dom'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { StatCard } from '../components/StatCard'
 import { useCampaigns } from '../hooks/useCampaigns'
@@ -23,6 +23,7 @@ const statusProgressBg: Record<string, string> = {
 }
 
 export function Dashboard() {
+  const navigate = useNavigate()
   const { campaigns, loading, error } = useCampaigns()
 
   const totals = useMemo(() => {
@@ -51,10 +52,10 @@ export function Dashboard() {
           <h1 className="h2 mb-1 fw-extrabold text-dark" style={{ letterSpacing: '-0.04em' }}>Dashboard</h1>
           <p className="text-muted mb-0">Your outreach campaigns and metrics at a glance</p>
         </div>
-        <Button as={Link as any} to="/compose" className="btn-gradient px-4 py-2.5 rounded-pill d-inline-flex align-items-center gap-2">
+        <Link to="/compose" className="btn btn-gradient px-4 py-2.5 rounded-pill d-inline-flex align-items-center gap-2 text-decoration-none">
           <i className="bi bi-plus-lg fs-6"></i>
           <span>New campaign</span>
-        </Button>
+        </Link>
       </div>
 
       <Row className="g-4 mb-4 mb-sm-5">
@@ -113,9 +114,9 @@ export function Dashboard() {
             <p className="mb-4 text-muted small" style={{ maxWidth: 320, margin: '0 auto' }}>
               Create your first email campaign to begin reaching out to your prospects automatically.
             </p>
-            <Button as={Link as any} to="/compose" className="btn-gradient px-4 py-2 rounded-pill">
+            <Link to="/compose" className="btn btn-gradient px-4 py-2 rounded-pill text-decoration-none">
               Create Campaign
-            </Button>
+            </Link>
           </Card>
         </div>
       ) : (
@@ -131,9 +132,10 @@ export function Dashboard() {
                   <div>
                     <Card
                       className="card-reachy border-0 h-100 cursor-pointer position-relative overflow-hidden"
-                      as={Link as any}
-                      to={`/campaigns/${campaign.id}`}
-                      style={{ textDecoration: 'none', color: 'inherit' }}
+                      onClick={() => navigate(`/campaigns/${campaign.id}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/campaigns/${campaign.id}`) } }}
                     >
                       <Card.Body className="p-4 d-flex flex-column justify-content-between">
                         <div>

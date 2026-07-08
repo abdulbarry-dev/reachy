@@ -43,8 +43,9 @@ function AccountRow({ acc, onDelete }: { acc: EmailAccount; onDelete: (id: strin
             className="rounded-circle d-inline-flex align-items-center justify-content-center"
             style={{ width: 34, height: 34 }}
             onClick={() => onDelete(acc.id)}
+            aria-label={`Delete ${acc.from_email} account`}
           >
-            <i className="bi bi-trash"></i>
+            <i className="bi bi-trash" aria-hidden="true"></i>
           </Button>
         </div>
       </div>
@@ -85,10 +86,10 @@ export function Settings() {
         body: JSON.stringify({ fromName, fromEmail, appPassword, smtpHost, smtpPort }),
       })
 
-      const data = await res.json()
-
       if (!res.ok) {
-        throw new Error(data.error ?? 'Connection failed')
+        let errMsg = 'Connection failed'
+        try { const err = await res.json(); errMsg = err.error ?? errMsg } catch { /* use fallback */ }
+        throw new Error(errMsg)
       }
 
       toast('Email account connected successfully', 'success')
@@ -153,8 +154,9 @@ export function Settings() {
                     <Row className="g-3">
                       <Col md={6}>
                         <div className="field">
-                          <Form.Label className="form-label-reachy">Your name</Form.Label>
+                          <Form.Label className="form-label-reachy" htmlFor="settings-name">Your name</Form.Label>
                           <Form.Control
+                            id="settings-name"
                             type="text"
                             placeholder="Jane Doe"
                             className="form-control-reachy"
@@ -166,8 +168,9 @@ export function Settings() {
                       </Col>
                       <Col md={6}>
                         <div className="field">
-                          <Form.Label className="form-label-reachy">Gmail address</Form.Label>
+                          <Form.Label className="form-label-reachy" htmlFor="settings-email">Gmail address</Form.Label>
                           <Form.Control
+                            id="settings-email"
                             type="email"
                             placeholder="you@gmail.com"
                             className="form-control-reachy"
@@ -180,8 +183,9 @@ export function Settings() {
                     </Row>
 
                     <div className="field">
-                      <Form.Label className="form-label-reachy">Gmail App Password</Form.Label>
+                      <Form.Label className="form-label-reachy" htmlFor="settings-password">Gmail App Password</Form.Label>
                       <Form.Control
+                        id="settings-password"
                         type="password"
                         placeholder="•••• •••• •••• ••••"
                         className="form-control-reachy"
@@ -210,8 +214,9 @@ export function Settings() {
                       <Row className="g-3 align-items-stretch">
                         <Col xs={12} sm={7}>
                           <div className="field mb-0">
-                            <Form.Label className="form-label-reachy">Host</Form.Label>
+                            <Form.Label className="form-label-reachy" htmlFor="settings-host">Host</Form.Label>
                             <Form.Control
+                              id="settings-host"
                               type="text"
                               className="form-control-reachy"
                               value={smtpHost}
@@ -221,12 +226,15 @@ export function Settings() {
                         </Col>
                         <Col xs={12} sm={5}>
                           <div className="field mb-0">
-                            <Form.Label className="form-label-reachy">Port</Form.Label>
+                            <Form.Label className="form-label-reachy" htmlFor="settings-port">Port</Form.Label>
                             <Form.Control
+                              id="settings-port"
                               type="number"
+                              min={1}
+                              max={65535}
                               className="form-control-reachy"
                               value={smtpPort}
-                              onChange={(e) => setSmtpPort(Number(e.target.value))}
+                              onChange={(e) => setSmtpPort(Math.max(1, Math.min(65535, Math.round(Number(e.target.value)))))}
                             />
                           </div>
                         </Col>

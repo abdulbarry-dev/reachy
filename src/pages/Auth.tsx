@@ -47,7 +47,9 @@ function AuthInput({ icon, type, placeholder, value, onChange, minLength, requir
   return (
     <div className="auth2-input-wrap">
       <i className={`bi ${icon} auth2-input-icon`} />
+      <Form.Label htmlFor={placeholder} className="visually-hidden">{placeholder}</Form.Label>
       <Form.Control
+        id={placeholder}
         type={type}
         placeholder={placeholder}
         value={value}

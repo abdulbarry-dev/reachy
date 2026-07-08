@@ -7,6 +7,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -26,6 +27,11 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
     if (userError || !user) throw new Error('Unauthorized')
 
+    const contentType = req.headers.get('content-type') ?? ''
+    if (!contentType.includes('application/json')) {
+      throw new Error('Content-Type must be application/json')
+    }
+
     const {
       emailAccountId,
       name,
@@ -35,6 +41,10 @@ serve(async (req) => {
       sendRateSeconds = 60,
       dailyCap = 90,
     } = await req.json()
+
+    // Clamp rate limits server-side (must stay under Gmail thresholds)
+    const clampedSendRate = Math.max(30, sendRateSeconds)
+    const clampedDailyCap = Math.max(1, Math.min(90, dailyCap))
 
     if (!emailAccountId || !name || !subjectTemplate || !bodyTemplate || !Array.isArray(recipients)) {
       throw new Error('emailAccountId, name, subjectTemplate, bodyTemplate, and recipients are required')
@@ -65,8 +75,8 @@ serve(async (req) => {
         name,
         subject_template: subjectTemplate,
         body_template: bodyTemplate,
-        send_rate_seconds: sendRateSeconds,
-        daily_cap: dailyCap,
+        send_rate_seconds: clampedSendRate,
+        daily_cap: clampedDailyCap,
       })
       .select('id')
       .single()
@@ -85,7 +95,7 @@ serve(async (req) => {
         campaign_id: campaignId,
         email: r.email,
         name: r.name || null,
-        variables: r.variables || {},
+        variables: { ...(r.variables || {}), ...(r.company ? { company: r.company } : {}) },
       }))
 
       const { error: insertError } = await supabase.from('recipients').insert(rows)

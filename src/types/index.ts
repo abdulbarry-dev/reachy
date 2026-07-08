@@ -10,29 +10,6 @@ export interface Recipient {
   sent_at?: string
 }
 
-export interface SmtpConfig {
-  host: string
-  port: number
-  secure: boolean
-  user: string
-  pass: string
-  fromEmail: string
-  fromName: string
-}
-
-export interface SendResult {
-  email: string
-  ok: boolean
-  error?: string
-}
-
-export interface CampaignResult {
-  total: number
-  sent: number
-  failed: number
-  results: SendResult[]
-}
-
 export interface EmailAccount {
   id: string
   user_id: string

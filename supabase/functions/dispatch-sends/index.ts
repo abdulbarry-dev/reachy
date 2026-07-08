@@ -4,15 +4,34 @@ import nodemailer from 'npm:nodemailer@6'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? ''
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: { ...corsHeaders, 'Access-Control-Allow-Methods': 'POST, OPTIONS' } })
+  }
+
+  // Auth: require CRON_SECRET header
+  const cronAuth = req.headers.get('x-cron-secret')
+  if (!cronAuth || cronAuth !== CRON_SECRET) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    })
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -20,6 +39,13 @@ serve(async (req) => {
   })
 
   try {
+    // Reclaim stuck 'sending' recipients (failed to send in previous run)
+    await supabase
+      .from('recipients')
+      .update({ status: 'pending', error_message: null })
+      .eq('status', 'sending')
+      .lt('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString())
+
     // Fetch all campaigns that are queued or running
     const { data: campaigns, error: campaignError } = await supabase
       .from('campaigns')
@@ -37,7 +63,22 @@ serve(async (req) => {
 
     for (const campaign of campaigns) {
       try {
-        // Check daily cap: count sent in last 24h
+        // Per-account rate limiting: count sent across ALL campaigns for this email_account_id
+        const { count: accountSentToday, error: accountCountError } = await supabase
+          .from('recipients')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'sent')
+          .gte('sent_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+          .in('campaign_id', (
+            await supabase.from('campaigns').select('id').eq('email_account_id', campaign.email_account_id)
+          ).data?.map(c => c.id) ?? [])
+
+        if (!accountCountError) {
+          const accountCap = Math.min(campaign.daily_cap, 90)
+          if ((accountSentToday ?? 0) >= accountCap) continue
+        }
+
+        // Check campaign daily cap
         const { count: sentToday, error: countError } = await supabase
           .from('recipients')
           .select('*', { count: 'exact', head: true })
@@ -48,7 +89,7 @@ serve(async (req) => {
         if (countError) continue
         if ((sentToday ?? 0) >= campaign.daily_cap) continue
 
-        // Check rate limit: time since last send
+        // Check rate limit: time since last send (per campaign)
         const { data: lastSent } = await supabase
           .from('recipients')
           .select('sent_at')
@@ -62,24 +103,27 @@ serve(async (req) => {
           if (elapsedMs < campaign.send_rate_seconds * 1000) continue
         }
 
-        // Pick one pending recipient
-        const { data: recipients } = await supabase
-          .from('recipients')
-          .select('id, email, name, variables')
-          .eq('campaign_id', campaign.id)
-          .eq('status', 'pending')
-          .limit(1)
+        // Atomic claim: pick one pending recipient using a stored procedure
+        const { data: claimResult, error: claimError } = await supabase.rpc(
+          'claim_pending_recipient',
+          { p_campaign_id: campaign.id },
+        )
 
-        if (!recipients || recipients.length === 0) {
+        if (claimError || !claimResult) {
           // No pending recipients — mark campaign completed
-          await supabase.from('campaigns').update({ status: 'completed' }).eq('id', campaign.id)
+          const { count: remaining } = await supabase
+            .from('recipients')
+            .select('*', { count: 'exact', head: true })
+            .eq('campaign_id', campaign.id)
+            .in('status', ['pending', 'sending'])
+
+          if ((remaining ?? 0) === 0) {
+            await supabase.from('campaigns').update({ status: 'completed' }).eq('id', campaign.id)
+          }
           continue
         }
 
-        const recipient = recipients[0]
-
-        // Mark as sending
-        await supabase.from('recipients').update({ status: 'sending' }).eq('id', recipient.id)
+        const recipient = claimResult as { id: string; email: string; name: string | null; variables: Record<string, string> }
 
         // Fetch email account + app password
         const { data: account } = await supabase
@@ -111,20 +155,20 @@ serve(async (req) => {
           continue
         }
 
-        // Build personalized content
+        // Build personalized content with HTML escaping
         const variables = (recipient.variables as Record<string, string>) ?? {}
         const personalize = (text: string) =>
           text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m: string, key: string) => {
-            if (key === 'email') return recipient.email
-            if (key === 'name') return recipient.name ?? ''
-            return variables[key] ?? ''
+            const val = key === 'email' ? recipient.email
+              : key === 'name' ? (recipient.name ?? '')
+              : variables[key] ?? ''
+            return escapeHtml(val)
           })
 
         const html = personalize(campaign.body_template)
         const subject = personalize(campaign.subject_template)
-        const from = account.from_name
-          ? `"${account.from_name}" <${account.from_email}>`
-          : account.from_email
+        const fromAddr = account.from_email
+        const fromName = account.from_name
 
         // Send email
         const transporter = nodemailer.createTransport({
@@ -132,15 +176,18 @@ serve(async (req) => {
           port: account.smtp_port || 587,
           secure: (account.smtp_port || 587) === 465,
           auth: { user: account.from_email, pass: secretData.decrypted_secret },
-          tls: { rejectUnauthorized: false },
         })
 
-        await transporter.sendMail({
-          from,
-          to: recipient.email,
-          subject,
-          html,
-        })
+        try {
+          await transporter.sendMail({
+            from: fromName ? { name: fromName, address: fromAddr } : fromAddr,
+            to: recipient.email,
+            subject,
+            html,
+          })
+        } finally {
+          transporter.close()
+        }
 
         // Mark sent
         await supabase
@@ -158,6 +205,17 @@ serve(async (req) => {
 
         summary.push({ campaignId: campaign.id, email: recipient.email, status: 'sent' })
       } catch (err) {
+        // Always finalize recipient status on failure
+        if (summary.length > 0) {
+          const last = summary[summary.length - 1]
+          if (last.status === 'error') {
+            await supabase
+              .from('recipients')
+              .update({ status: 'failed', error_message: err.message })
+              .eq('campaign_id', campaign.id)
+              .eq('status', 'sending')
+          }
+        }
         summary.push({ campaignId: campaign.id, email: 'error', status: `error: ${err.message}` })
       }
     }

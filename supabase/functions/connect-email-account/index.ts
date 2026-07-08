@@ -8,6 +8,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -16,6 +17,11 @@ serve(async (req) => {
   }
 
   try {
+    const contentType = req.headers.get('content-type') ?? ''
+    if (!contentType.includes('application/json')) {
+      throw new Error('Content-Type must be application/json')
+    }
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
     })
@@ -34,15 +40,19 @@ serve(async (req) => {
     }
 
     // Validate SMTP with a test connection
-    const testTransporter = nodemailer.createTransport({
-      host: smtpHost || 'smtp.gmail.com',
-      port: smtpPort || 587,
-      secure: (smtpPort || 587) === 465,
-      auth: { user: fromEmail, pass: appPassword },
-      tls: { rejectUnauthorized: false },
-    })
+    let testTransporter
+    try {
+      testTransporter = nodemailer.createTransport({
+        host: smtpHost || 'smtp.gmail.com',
+        port: smtpPort || 587,
+        secure: (smtpPort || 587) === 465,
+        auth: { user: fromEmail, pass: appPassword },
+      })
 
-    await testTransporter.verify()
+      await testTransporter.verify()
+    } finally {
+      if (testTransporter) testTransporter.close()
+    }
 
     // Store the app password in Supabase Vault
     const secretName = `reachy-password-${user.id}-${crypto.randomUUID()}`
@@ -69,7 +79,11 @@ serve(async (req) => {
       .select('id, from_name, from_email, created_at')
       .single()
 
-    if (insertError) throw new Error(`Insert error: ${insertError.message}`)
+    if (insertError) {
+      // Clean up Vault secret on insert failure
+      await supabase.rpc('vault.delete_secret', { secret_id: secretId }).catch(() => {})
+      throw new Error(`Insert error: ${insertError.message}`)
+    }
 
     return new Response(JSON.stringify(account), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

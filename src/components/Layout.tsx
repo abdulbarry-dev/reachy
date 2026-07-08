@@ -50,20 +50,20 @@ export function Layout() {
 
   const handleLogout = async () => {
     setLoggingOut(true)
-    try {
-      await dispatch(signOut())
+    const result = await dispatch(signOut())
+    if (signOut.fulfilled.match(result)) {
       toast('Signed out successfully', 'info')
       navigate('/login', { replace: true })
-    } catch {
+    } else {
       toast('Failed to sign out', 'error')
-    } finally {
-      setLoggingOut(false)
-      setShowLogoutModal(false)
     }
+    setLoggingOut(false)
+    setShowLogoutModal(false)
   }
 
   return (
     <div className="app-layout">
+      <a href="#main-content" className="skip-link visually-hidden-focusable">Skip to content</a>
       {isMobile && (
         <header className="mobile-topbar">
           <div className="mobile-brand">
@@ -123,7 +123,7 @@ export function Layout() {
             </motion.button>
           </div>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" aria-label="Main navigation">
           {mainLinks.map((link) => (
             <NavLink
               key={link.to}
@@ -228,15 +228,25 @@ export function Layout() {
         animate={isMobile ? { marginLeft: 0 } : { marginLeft: sidebarWidth }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       >
-        <main className="page-container">
+        <main id="main-content" className="page-container">
           <Outlet />
         </main>
 
         <footer className="bg-white border-top py-3">
           <Container>
-            <Stack direction="horizontal" gap={2} className="justify-content-center text-muted small">
+            <Stack direction="horizontal" gap={3} className="justify-content-center text-muted small">
               <i className="bi bi-shield-check" />
-              <span>Cold-email automation</span>
+              <span>Reachy — Cold-email automation</span>
+              <span className="text-border" style={{ width: 1, height: 14, background: '#e2e8f0' }} />
+              <a href="https://github.com/abdulbarry-dev/reachy" target="_blank" rel="noopener noreferrer" className="text-decoration-none text-muted" aria-label="GitHub">
+                <i className="bi bi-github" aria-hidden="true"></i>
+              </a>
+              <a href="https://x.com/AbdulbarryG" target="_blank" rel="noopener noreferrer" className="text-decoration-none text-muted" aria-label="X (Twitter)">
+                <i className="bi bi-twitter-x" aria-hidden="true"></i>
+              </a>
+              <a href="https://www.linkedin.com/in/abdulbarryguenichi/" target="_blank" rel="noopener noreferrer" className="text-decoration-none text-muted" aria-label="LinkedIn">
+                <i className="bi bi-linkedin" aria-hidden="true"></i>
+              </a>
             </Stack>
           </Container>
         </footer>

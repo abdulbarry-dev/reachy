@@ -33,13 +33,18 @@ export function Compose() {
 
   const previewRecipient = importedRecipients[previewIndex] ?? null
 
+  function escapeHtml(str: string): string {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  }
+
   const previewHtml = useMemo(() => {
     return body.replace(/\{\{\s*(\w+)\s*\}\}/g, (_match, key) => {
       if (!previewRecipient) return `{{${key}}}`
-      if (key === 'email') return previewRecipient.email
-      if (key === 'name') return previewRecipient.name ?? ''
-      if (key === 'company') return previewRecipient.company ?? ''
-      return previewRecipient.variables?.[key] ?? ''
+      const val = key === 'email' ? previewRecipient.email
+        : key === 'name' ? (previewRecipient.name ?? '')
+        : key === 'company' ? (previewRecipient.company ?? '')
+        : previewRecipient.variables?.[key] ?? ''
+      return escapeHtml(val)
     })
   }, [body, previewRecipient])
 
@@ -94,11 +99,13 @@ export function Compose() {
         }),
       })
 
-      const data = await res.json()
-
       if (!res.ok) {
-        throw new Error(data.error ?? 'Failed to create campaign')
+        let errMsg = 'Failed to create campaign'
+        try { const err = await res.json(); errMsg = err.error ?? errMsg } catch { /* use fallback */ }
+        throw new Error(errMsg)
       }
+
+      const data = await res.json()
 
       toast('Campaign created successfully', 'success')
       navigate(`/campaigns/${data.campaignId}`)
@@ -157,8 +164,9 @@ export function Compose() {
                       </Alert>
                     ) : (
                       <div className="field">
-                        <Form.Label className="form-label-reachy">From</Form.Label>
+                        <Form.Label className="form-label-reachy" htmlFor="compose-from">From</Form.Label>
                         <Form.Select
+                          id="compose-from"
                           className="form-select-reachy"
                           autoComplete="off"
                           value={emailAccountId}
@@ -176,8 +184,9 @@ export function Compose() {
                     )}
 
                     <div className="field">
-                      <Form.Label className="form-label-reachy">Campaign name</Form.Label>
+                      <Form.Label className="form-label-reachy" htmlFor="compose-name">Campaign name</Form.Label>
                       <Form.Control
+                        id="compose-name"
                         type="text"
                         inputMode="text"
                         autoComplete="off"
@@ -190,8 +199,9 @@ export function Compose() {
                     </div>
 
                     <div className="field">
-                      <Form.Label className="form-label-reachy">Subject template</Form.Label>
+                      <Form.Label className="form-label-reachy" htmlFor="compose-subject">Subject template</Form.Label>
                       <Form.Control
+                        id="compose-subject"
                         type="text"
                         inputMode="text"
                         autoComplete="off"
@@ -208,8 +218,9 @@ export function Compose() {
                     </div>
 
                     <div className="field">
-                      <Form.Label className="form-label-reachy">Email body (HTML)</Form.Label>
+                      <Form.Label className="form-label-reachy" htmlFor="compose-body">Email body (HTML)</Form.Label>
                       <Form.Control
+                        id="compose-body"
                         as="textarea"
                         rows={8}
                         inputMode="text"
@@ -235,28 +246,30 @@ export function Compose() {
                       <Row className="g-3">
                         <Col xs={12} sm={6}>
                           <div className="field mb-0">
-                            <Form.Label className="form-label-reachy">Send interval (seconds)</Form.Label>
+                            <Form.Label className="form-label-reachy" htmlFor="compose-interval">Send interval (seconds)</Form.Label>
                             <Form.Control
+                              id="compose-interval"
                               type="number"
                               inputMode="numeric"
                               min={30}
                               className="form-control-reachy"
                               value={sendRate}
-                              onChange={(e) => setSendRate(Number(e.target.value))}
+                              onChange={(e) => setSendRate(Math.max(30, Number(e.target.value)))}
                             />
                           </div>
                         </Col>
                         <Col xs={12} sm={6}>
                           <div className="field mb-0">
-                            <Form.Label className="form-label-reachy">Daily cap</Form.Label>
+                            <Form.Label className="form-label-reachy" htmlFor="compose-daily-cap">Daily cap</Form.Label>
                             <Form.Control
+                              id="compose-daily-cap"
                               type="number"
                               inputMode="numeric"
                               min={1}
                               max={500}
                               className="form-control-reachy"
                               value={dailyCap}
-                              onChange={(e) => setDailyCap(Number(e.target.value))}
+                              onChange={(e) => setDailyCap(Math.max(1, Math.min(500, Number(e.target.value))))}
                             />
                           </div>
                         </Col>

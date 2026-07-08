@@ -34,8 +34,8 @@ function getEdgeFunctionUrl(name: string): string {
 export function CampaignDetail() {
   const { campaignId } = useParams<{ campaignId: string }>()
   const navigate = useNavigate()
-  const { campaigns } = useCampaigns()
-  const { recipients, loading: recipientsLoading, error } = useRecipients(campaignId)
+  const { campaigns, loading: campaignsLoading } = useCampaigns()
+  const { recipients, loading: recipientsLoading, error, refetch } = useRecipients(campaignId)
   const { toast } = useToast()
   const [starting, setStarting] = useState(false)
 
@@ -58,17 +58,28 @@ export function CampaignDetail() {
       })
 
       if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error ?? 'Failed to start campaign')
+        let errMsg = 'Failed to start campaign'
+        try { const err = await res.json(); errMsg = err.error ?? errMsg } catch { /* use fallback */ }
+        throw new Error(errMsg)
       }
 
       toast('Campaign started successfully', 'success')
-      window.location.reload()
+      refetch()
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to start campaign', 'error')
     } finally {
       setStarting(false)
     }
+  }
+
+  if (campaignsLoading) {
+    return (
+      <AnimatedPage>
+        <div className="d-flex align-items-center justify-content-center" style={{ minHeight: 300 }}>
+          <div className="spinner-border text-primary" />
+        </div>
+      </AnimatedPage>
+    )
   }
 
   if (!campaign) {

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
-import { Route, Routes, Navigate } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
+import { Route, Routes, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence, MotionConfig } from 'framer-motion'
 import { supabase } from './lib/supabase'
 import { useDispatch, useSelector } from 'react-redux'
 import { setSession, setUser, setAuthLoading } from './store/authSlice'
@@ -51,10 +51,14 @@ function ProtectedRoute() {
 function App() {
   const dispatch = useDispatch<AppDispatch>()
 
+  const location = useLocation()
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       dispatch(setUser(session?.user ?? null))
       dispatch(setSession(session))
+      dispatch(setAuthLoading(false))
+    }).catch(() => {
       dispatch(setAuthLoading(false))
     })
 
@@ -67,25 +71,29 @@ function App() {
   }, [dispatch])
 
   return (
-    <AnimatePresence mode="wait">
-      <Routes>
-        {/* Default route is always the public Landing Page */}
-        <Route path="/" element={<LandingPage />} />
+    <MotionConfig reducedMotion="user">
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Auth mode="login" />} />
+          <Route path="/signup" element={<Auth mode="signup" />} />
+          <Route path="/reset-password" element={<Auth mode="reset-password" />} />
 
-        <Route path="/login" element={<Auth mode="login" />} />
-        <Route path="/signup" element={<Auth mode="signup" />} />
-        <Route path="/reset-password" element={<Auth mode="reset-password" />} />
+          {/* Protected app routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="recipients" element={<Recipients />} />
+            <Route path="compose" element={<Compose />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="campaigns/:campaignId" element={<CampaignDetail />} />
+          </Route>
 
-        {/* Protected app routes */}
-        <Route path="/" element={<ProtectedRoute />}>
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="recipients" element={<Recipients />} />
-          <Route path="compose" element={<Compose />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="campaigns/:campaignId" element={<CampaignDetail />} />
-        </Route>
-      </Routes>
-    </AnimatePresence>
+          {/* 404 catch-all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AnimatePresence>
+    </MotionConfig>
   )
 }
 

@@ -42,21 +42,22 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
 
-      <div className="toast-reachy-container">
+      <div className="toast-reachy-container" aria-live="polite" aria-relevant="additions removals">
         <AnimatePresence>
           {toasts.map((t) => (
             <motion.div
               key={t.id}
+              role="alert"
               className={`toast-reachy toast-reachy-${t.type}`}
               initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             >
-              <i className={`bi ${iconMap[t.type]}`} />
+              <i className={`bi ${iconMap[t.type]}`} aria-hidden="true" />
               <span>{t.message}</span>
-              <button className="toast-reachy-close" onClick={() => removeToast(t.id)}>
-                <i className="bi bi-x" />
+              <button className="toast-reachy-close" onClick={() => removeToast(t.id)} aria-label="Close notification">
+                <i className="bi bi-x" aria-hidden="true" />
               </button>
             </motion.div>
           ))}

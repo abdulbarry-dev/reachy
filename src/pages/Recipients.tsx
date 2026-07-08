@@ -179,8 +179,9 @@ export function Recipients() {
                   </div>
                   <Form onSubmit={handleManualAdd} className="flex-grow-1 d-flex flex-column">
                     <div className="field">
-                      <Form.Label className="form-label-reachy">Email address</Form.Label>
+                      <Form.Label className="form-label-reachy" htmlFor="recip-email">Email address</Form.Label>
                       <Form.Control
+                        id="recip-email"
                         type="email"
                         inputMode="email"
                         autoComplete="email"
@@ -192,8 +193,9 @@ export function Recipients() {
                       />
                     </div>
                     <div className="field">
-                      <Form.Label className="form-label-reachy">Name</Form.Label>
+                      <Form.Label className="form-label-reachy" htmlFor="recip-name">Name</Form.Label>
                       <Form.Control
+                        id="recip-name"
                         type="text"
                         inputMode="text"
                         autoComplete="name"
@@ -204,8 +206,9 @@ export function Recipients() {
                       />
                     </div>
                     <div className="field">
-                      <Form.Label className="form-label-reachy">Company</Form.Label>
+                      <Form.Label className="form-label-reachy" htmlFor="recip-company">Company</Form.Label>
                       <Form.Control
+                        id="recip-company"
                         type="text"
                         inputMode="text"
                         autoComplete="organization"
@@ -307,7 +310,7 @@ export function Recipients() {
                 </thead>
                 <tbody>
                   {recipients.map((r, i) => (
-                    <tr key={i}>
+                    <tr key={`${r.email}-${i}`}>
                       <td>
                         <Form.Check
                           checked={selected.has(i)}
@@ -377,8 +380,9 @@ export function Recipients() {
           {editTarget !== null && (
             <Form onSubmit={(e) => { e.preventDefault(); handleSaveEdit() }}>
               <div className="field">
-                <Form.Label className="form-label-reachy">Email</Form.Label>
+                <Form.Label className="form-label-reachy" htmlFor="edit-email">Email</Form.Label>
                 <Form.Control
+                  id="edit-email"
                   type="email"
                   value={recipients[editTarget].email}
                   disabled
@@ -390,8 +394,9 @@ export function Recipients() {
                 </div>
               </div>
               <div className="field">
-                <Form.Label className="form-label-reachy">Name</Form.Label>
+                <Form.Label className="form-label-reachy" htmlFor="edit-name">Name</Form.Label>
                 <Form.Control
+                  id="edit-name"
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
@@ -400,8 +405,9 @@ export function Recipients() {
                 />
               </div>
               <div className="field">
-                <Form.Label className="form-label-reachy">Company</Form.Label>
+                <Form.Label className="form-label-reachy" htmlFor="edit-company">Company</Form.Label>
                 <Form.Control
+                  id="edit-company"
                   type="text"
                   value={editCompany}
                   onChange={(e) => setEditCompany(e.target.value)}
