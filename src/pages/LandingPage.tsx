@@ -917,8 +917,14 @@ export function LandingPage() {
                     Secure cold email automation designed to respect sending thresholds and safeguard sender credentials.
                   </p>
                   <div className="d-flex gap-3 text-secondary" style={{ fontSize: '1.25rem' }}>
-                    {['bi-github', 'bi-twitter-x', 'bi-linkedin'].map((icon) => (
-                      <motion.i key={icon} className={`bi ${icon}`} style={{ cursor: 'pointer' }} whileHover={{ color: '#3AB397', scale: 1.2 }} />
+                    {[
+                      { icon: 'bi-github', href: 'https://github.com/abdulbarry-dev/reachy' },
+                      { icon: 'bi-twitter-x', href: 'https://x.com/AbdulbarryG' },
+                      { icon: 'bi-linkedin', href: 'https://www.linkedin.com/in/abdulbarryguenichi/' },
+                    ].map(({ icon, href }) => (
+                      <a key={icon} href={href} target="_blank" rel="noopener noreferrer" className="text-decoration-none text-secondary">
+                        <motion.i className={`bi ${icon}`} whileHover={{ color: '#3AB397', scale: 1.2 }} />
+                      </a>
                     ))}
                   </div>
                 </motion.div>
