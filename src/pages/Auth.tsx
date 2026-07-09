@@ -259,12 +259,26 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
 
       {/* ── Right form panel ── */}
       <main className="auth2-main">
+        {/* Mobile header bar (hidden on desktop) */}
+        <div className="auth2-mobile-header d-lg-none">
+          <Link to="/" className="auth2-mobile-back" aria-label="Back to home">
+            <i className="bi bi-arrow-left" />
+          </Link>
+          <div className="auth2-mobile-tag">{panel.tag}</div>
+        </div>
+
         <motion.div
           className="auth2-card"
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, delay: 0.1, ease: EASE_OUT_EXPO }}
         >
+          {/* Mobile brand logo (hidden on desktop) */}
+          <div className="auth2-card-brand d-lg-none">
+            <LogoSvg size={24} />
+            <span>Reachy</span>
+          </div>
+
           <AnimatePresence mode="wait">
 
             {/* ════ LOGIN ════ */}
@@ -428,6 +442,13 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
 
           </AnimatePresence>
         </motion.div>
+
+        {/* Mobile trust bar (hidden on desktop) */}
+        <div className="auth2-mobile-trust d-lg-none">
+          <div className="auth2-mobile-trust-item"><i className="bi bi-shield-check" /> Vault-encrypted</div>
+          <div className="auth2-mobile-trust-item"><i className="bi bi-clock-history" /> pg_cron</div>
+          <div className="auth2-mobile-trust-item"><i className="bi bi-google" /> Gmail SMTP</div>
+        </div>
 
         {/* Footer note */}
         <motion.p

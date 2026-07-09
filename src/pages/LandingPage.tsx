@@ -138,41 +138,9 @@ function useTilt() {
   return { ref, rotateX, rotateY }
 }
 
-// ─── SVG Logo (hoisted — stable reference) ────────────────────────────────────
+// ─── Logo — uses the same SVG from public/logo.svg ────────────────────────────
 const LogoSvg = ({ className }: { className?: string }) => (
-  <svg className={className ?? 'lp-logo-svg'} viewBox="0 0 340 350" xmlns="http://www.w3.org/2000/svg">
-    <g transform="translate(0.000000,350.000000) scale(0.100000,-0.100000)" fill="currentColor">
-      <path d="M511 3255 c-82 -187 -117 -386 -108 -623 8 -224 65 -406 173 -553 44 -61 163 -172 214 -201 22 -13
-40 -25 40 -28 0 -3 -35 -13 -77 -23 -200 -45 -406 -177 -526 -337 -43 -57 -147 -247 -147 -269 0 -7
-30 -11 83 -11 107 0 252 -22 352 -54 108 -34 253 -118 332 -191 61 -56 66 -64 70 -111 6 -55 -9 -94
--54 -148 -56 -68 -186 -147 -322 -196 -94 -35 -93 -36 -61 75 30 107 94 227 156 294 l55 59 -28 20
-c-43 30 -90 52 -110 52 -36 0 -135 -126 -178 -226 -28 -65 -65 -175 -79 -239 -19 -81 -40 -254 -32
--262 10 -10 155 15 253 43 48 14 138 49 198 78 171 82 276 171 331 279 14 26 29 45 34 42 5 -3 26
--35 46 -71 55 -99 93 -228 112 -386 13 -114 19 -137 31 -133 43 17 207 123 267 173 133 112 248 281
-303 448 20 60 35 141 46 256 l6 56 77 58 c105 80 301 271 377 369 156 200 260 407 330 660 37 131
-64 184 121 234 50 44 107 65 206 77 32 3 58 10 58 14 0 18 -68 96 -110 127 -57 40 -72 55 -121 121
--45 59 -106 102 -183 129 -66 23 -207 22 -296 -1 -244 -65 -545 -188 -684 -281 l-53 -35 -109 66
-c-60 36 -154 88 -209 116 -162 82 -254 136 -361 214 -136 99 -237 200 -313 314 -35 52 -64 96 -66
-98 -1 1 -21 -40 -44 -93z m174 -333 c112 -106 266 -207 540 -353 382 -204 489 -298 563 -498 20 -53
-26 -91 30 -197 7 -191 -22 -318 -99 -432 l-31 -45 34 29 c50 43 118 126 159 195 48 79 79 175 89
-278 l9 85 102 102 102 103 46 -39 c25 -22 47 -38 49 -36 3 4 72 305 72 317 0 7 -309 -68 -319 -78
--3 -2 14 -23 37 -46 l42 -43 -79 -78 c-43 -43 -81 -74 -83 -70 -3 5 -11 27 -18 49 -18 57 -55 120
--118 199 -64 80 -68 70 57 134 165 86 485 196 602 209 31 3 72 3 91 -1 50 -9 121 -59 153 -108 l28
--42 -24 -15 c-102 -66 -148 -145 -211 -359 -49 -167 -98 -283 -172 -407 -198 -331 -526 -605 -1001
--837 l-148 -72 -34 40 c-19 21 -46 54 -60 72 l-26 33 100 102 c117 119 156 176 185 270 52 173 -14
-357 -167 464 l-29 21 59 78 c33 44 114 136 182 205 l123 126 -53 26 c-108 54 -98 56 -189 -31 -70
--67 -185 -202 -254 -298 l-21 -29 -81 49 c-122 74 -214 171 -267 281 -41 87 -59 135 -48 135 3 0
-32 -25 66 -55 42 -38 99 -74 182 -115 170 -83 155 -83 187 4 l26 74 -71 36 c-39 20 -115 57 -170
-82 -54 25 -123 55 -153 67 -30 12 -67 27 -83 34 -40 17 -65 42 -65 65 0 13 3 28 7 33 4 6 31 33
-60 61 68 67 127 145 161 213 15 30 55 137 89 238 34 101 66 194 72 206 20 46 66 93 113 116 35 17
-42 18 185 18 142 0 150 -1 185 -18 47 -23 93 -70 113 -116 6 -12 38 -105 72 -206 34 -101 74 -208
-89 -238 34 -68 93 -146 161 -213 29 -28 56 -55 60 -61 4 -5 7 -20 7 -33 0 -23 -25 -48 -65 -65
--16 -7 -53 -22 -83 -34 -30 -12 -99 -42 -153 -67 -55 -25 -131 -62 -170 -82 l-71 -36 26 -74 c27
--77 25 -76 87 -41 199 112 547 299 705 380 178 91 264 159 301 237 14 30 42 116 51 157 8 36 8
-111 0 148 -9 40 -37 127 -51 157 -37 78 -123 146 -301 237 -158 81 -506 268 -705 380 -62 35 -60
-36 -87 -41z"/>
-    </g>
-  </svg>
+  <img src="/logo.svg" alt="Reachy" className={className ?? 'lp-logo-svg'} />
 )
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -182,6 +150,7 @@ export function LandingPage() {
   const { user } = useSelector((state: RootState) => state.auth)
   const [scrolled, setScrolled] = useState(false)
   const [activeSection, setActiveSection] = useState('')
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   // Interactive template playground
   const [templateText, setTemplateText] = useState(
@@ -304,65 +273,120 @@ export function LandingPage() {
 
       {/* ── Navbar ── */}
       <motion.nav
-        className={`navbar navbar-expand-lg fixed-top lp-navbar ${scrolled ? 'scrolled' : ''}`}
+        className={`lp-navbar fixed-top ${scrolled ? 'scrolled' : ''}`}
         initial={{ opacity: 0, y: -14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
       >
         <Container>
-          <a href="#" className="lp-brand">
-            <LogoSvg />
-            <span>Reachy</span>
-          </a>
+          <div className="lp-navbar-inner">
+            <a href="#" className="lp-brand">
+              <LogoSvg />
+              <span>Reachy</span>
+            </a>
 
-          <button className="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#lpNavbarNav" aria-label="Toggle navigation" aria-expanded="false" aria-controls="lpNavbarNav">
-            <span className="navbar-toggler-icon" />
-          </button>
-
-          <div className="collapse navbar-collapse" id="lpNavbarNav">
-            <div className="navbar-nav mx-auto align-items-center">
-              {(['features', 'workflow', 'playground', 'deliverability'] as const).map((id, i) => (
-                <motion.a
+            {/* Desktop nav links — hidden on mobile */}
+            <div className="lp-nav-desktop">
+              {(['features', 'workflow', 'playground', 'deliverability'] as const).map((id) => (
+                <a
                   key={id}
                   href={`#${id}`}
                   className={`lp-nav-link ${activeSection === id ? 'active' : ''}`}
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 + i * 0.06, ease: EASE_OUT_EXPO }}
                 >
                   {id === 'features' ? 'Features' : id === 'workflow' ? 'How it Works' : id === 'playground' ? 'Playground' : 'Deliverability'}
-                  {activeSection === id && (
-                    <motion.span
-                      className="lp-nav-active-dot"
-                      layoutId="navActiveDot"
-                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                    />
-                  )}
-                </motion.a>
+                </a>
               ))}
             </div>
 
-            <div className="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+            {/* Desktop auth buttons */}
+            <div className="lp-nav-desktop-actions">
               {user ? (
-                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.4 }}>
-                  <Button className="btn-lp-nav-cta" onClick={() => navigate('/dashboard')}>
-                    Go to Dashboard <i className="bi bi-arrow-right ms-1" />
-                  </Button>
-                </motion.div>
+                <Button className="btn-lp-nav-cta" onClick={() => navigate('/dashboard')}>
+                  Go to Dashboard <i className="bi bi-arrow-right ms-1" />
+                </Button>
               ) : (
                 <>
-                  <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.38, duration: 0.45, ease: EASE_OUT_EXPO }}>
-                    <Link to="/login" className="lp-nav-link text-decoration-none" style={{ margin: 0 }}>Log In</Link>
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.46, duration: 0.45, ease: EASE_OUT_EXPO }}>
-                    <Link to="/signup" className="btn-lp-nav-cta text-decoration-none">Get Started</Link>
-                  </motion.div>
+                  <Link to="/login" className="lp-nav-link text-decoration-none" style={{ margin: 0 }}>Log In</Link>
+                  <Link to="/signup" className="btn-lp-nav-cta text-decoration-none">Get Started</Link>
                 </>
               )}
             </div>
+
+            {/* Mobile hamburger */}
+            <button
+              className="lp-mobile-menu-btn d-lg-none"
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open menu"
+            >
+              <i className="bi bi-list" />
+            </button>
           </div>
         </Container>
       </motion.nav>
+
+      {/* ── Mobile Sidebar ── */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              className="lp-sidebar-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.aside
+              className="lp-sidebar"
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="lp-sidebar-header">
+                <div className="lp-sidebar-brand">
+                  <LogoSvg />
+                  <span>Reachy</span>
+                </div>
+                <button
+                  className="lp-sidebar-close"
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="Close menu"
+                >
+                  <i className="bi bi-x-lg" />
+                </button>
+              </div>
+
+              <nav className="lp-sidebar-nav">
+                {(['features', 'workflow', 'playground', 'deliverability'] as const).map((id) => (
+                  <a
+                    key={id}
+                    href={`#${id}`}
+                    className={`lp-sidebar-link ${activeSection === id ? 'active' : ''}`}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {id === 'features' ? 'Features' : id === 'workflow' ? 'How it Works' : id === 'playground' ? 'Playground' : 'Deliverability'}
+                  </a>
+                ))}
+              </nav>
+
+              <div className="lp-sidebar-footer">
+                {user ? (
+                  <Button className="btn-lp-nav-cta w-100" onClick={() => { setMobileOpen(false); navigate('/dashboard'); }}>
+                    Go to Dashboard <i className="bi bi-arrow-right ms-1" />
+                  </Button>
+                ) : (
+                  <>
+                    <Link to="/login" className="lp-sidebar-auth-btn" onClick={() => setMobileOpen(false)}>Log In</Link>
+                    <Link to="/signup" className="lp-sidebar-auth-btn lp-sidebar-auth-btn-primary" onClick={() => setMobileOpen(false)}>Get Started</Link>
+                  </>
+                )}
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ── Hero Section ── */}
       <section className="lp-section pt-5 pb-5">

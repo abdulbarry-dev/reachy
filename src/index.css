@@ -1139,22 +1139,167 @@ h1, h2, h3, h4, h5, h6 {
   text-align: center;
 }
 
+/* ── Mobile header bar outside card (visible <992px) ── */
+.auth2-mobile-header {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.25rem 0.5rem;
+  position: relative;
+  z-index: 2;
+}
+.auth2-mobile-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--reachy-muted);
+  font-size: 1.1rem;
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.auth2-mobile-back:hover {
+  background: rgba(58, 179, 151, 0.08);
+  color: var(--reachy-primary);
+}
+.auth2-mobile-tag {
+  margin-left: auto;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--reachy-primary);
+  background: rgba(58, 179, 151, 0.1);
+  border: 1px solid rgba(58, 179, 151, 0.18);
+  border-radius: 50rem;
+  padding: 0.25rem 0.7rem;
+  white-space: nowrap;
+}
+
+/* ── Mobile brand logo inside card (visible <992px) ── */
+.auth2-card-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+}
+.auth2-card-brand svg {
+  width: 28px;
+  height: 28px;
+  color: var(--reachy-primary);
+  flex-shrink: 0;
+}
+.auth2-card-brand > span {
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -0.04em;
+  color: var(--reachy-primary);
+}
+
+/* ── Mobile trust bar (visible <992px) ── */
+.auth2-mobile-trust {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 0.25rem 0;
+  position: relative;
+  z-index: 2;
+}
+.auth2-mobile-trust-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.auth2-mobile-trust-item i {
+  color: rgba(58, 179, 151, 0.7);
+  font-size: 0.75rem;
+}
+
 /* ── Responsive ── */
 @media (max-width: 991.98px) {
   .auth2-side {
     display: none;
   }
   .auth2-main {
-    padding: 2rem 1rem;
+    padding: 1.25rem 1rem;
   }
 }
-@media (max-width: 480px) {
+@media (max-width: 575.98px) {
+  .auth2-main {
+    padding: 0.75rem 0.75rem;
+  }
   .auth2-card {
-    padding: 2rem 1.5rem;
+    padding: 1.75rem 1.25rem;
     border-radius: 1.25rem;
   }
   .auth2-heading {
-    font-size: 1.45rem;
+    font-size: 1.35rem;
+  }
+  .auth2-input {
+    font-size: 16px !important;
+    padding: 0.75rem 0.85rem 0.75rem 2.5rem !important;
+  }
+  .auth2-btn {
+    min-height: 48px;
+    font-size: 0.95rem;
+  }
+  .auth2-mobile-trust-item {
+    font-size: 0.68rem;
+  }
+}
+@media (max-width: 399.98px) {
+  .auth2-root {
+    overscroll-behavior: contain;
+  }
+  .auth2-main {
+    padding: 0.5rem;
+  }
+  .auth2-card {
+    padding: 1.5rem 1rem;
+    border-radius: 0;
+    box-shadow: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+  .auth2-card::before {
+    height: 4px;
+  }
+  .auth2-blob-1,
+  .auth2-blob-2 {
+    opacity: 0.18;
+  }
+  .auth2-heading {
+    font-size: 1.25rem;
+  }
+  .auth2-card-brand {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+  }
+  .auth2-card-brand svg {
+    width: 24px;
+    height: 24px;
+  }
+  .auth2-card-brand > span {
+    font-size: 1.1rem;
+  }
+  .auth2-mobile-header {
+    padding: 0.5rem 0.25rem;
   }
 }
 
@@ -1943,6 +2088,15 @@ textarea.form-control-reachy {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile touch optimizations for auth */
+@media (hover: none) and (pointer: coarse) {
+  .auth2-input,
+  .auth2-btn,
+  .auth2-mobile-back {
+    touch-action: manipulation;
   }
 }
 
