@@ -57,10 +57,16 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::VERCEL_TOKEN secret is not set. Add it in GitHub repo: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
           npx vercel deploy \
             --prod \
             --yes \
-            --token=${{ secrets.VERCEL_TOKEN }} \
-            --build-env VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
-            --build-env VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+            --token="$VERCEL_TOKEN" \
+            --build-env VITE_SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}" \
+            --build-env VITE_SUPABASE_ANON_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}"
