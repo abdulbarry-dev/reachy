@@ -1,4 +1,5 @@
 {
+  "name": "reachy-cold-email",
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",

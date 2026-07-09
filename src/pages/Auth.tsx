@@ -6,23 +6,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { signIn, signUp, resetPassword, updatePassword, clearAuthError } from '../store/authSlice'
 import type { RootState, AppDispatch } from '../store'
 
-// ─── Motion Presets (aligned with LandingPage) ───────────────────────────────
-const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const
+const easeOut = [0.16, 1, 0.3, 1] as const
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: EASE_OUT_EXPO } },
-  exit:   { opacity: 0, y: -16, transition: { duration: 0.3, ease: EASE_OUT_EXPO } }
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: easeOut } },
+  exit:   { opacity: 0, y: -12, transition: { duration: 0.2 } }
 }
 
 const fadeIn = {
-  hidden: { opacity: 0, scale: 0.97 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.55, ease: EASE_OUT_EXPO } },
-  exit:   { opacity: 0, scale: 0.97, transition: { duration: 0.25 } }
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.4 } },
+  exit:   { opacity: 0, transition: { duration: 0.2 } }
 }
 
-// ─── Shared SVG Logo ─────────────────────────────────────────────────────────
-function LogoSvg({ size = 32 }: { size?: number }) {
+function LogoSvg({ size = 24 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 340 350" xmlns="http://www.w3.org/2000/svg">
       <g transform="translate(0.000000,350.000000) scale(0.100000,-0.100000)" fill="currentColor">
@@ -32,8 +30,8 @@ function LogoSvg({ size = 32 }: { size?: number }) {
   )
 }
 
-// ─── Field Input Component ────────────────────────────────────────────────────
 interface AuthInputProps {
+  label: string
   icon: string
   type: string
   placeholder: string
@@ -43,59 +41,59 @@ interface AuthInputProps {
   required?: boolean
   autoComplete?: string
 }
-function AuthInput({ icon, type, placeholder, value, onChange, minLength, required, autoComplete }: AuthInputProps) {
+
+function AuthInput({ label, icon, type, placeholder, value, onChange, minLength, required, autoComplete }: AuthInputProps) {
   return (
-    <div className="auth2-input-wrap">
-      <i className={`bi ${icon} auth2-input-icon`} />
-      <Form.Label htmlFor={placeholder} className="visually-hidden">{placeholder}</Form.Label>
-      <Form.Control
-        id={placeholder}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="auth2-input"
-        minLength={minLength}
-        required={required}
-        autoComplete={autoComplete}
-      />
+    <div className="auth-input-wrap">
+      <Form.Label htmlFor={label}>{label}</Form.Label>
+      <div className="auth-input-inner">
+        <i className={`bi ${icon} auth-input-icon`} />
+        <Form.Control
+          id={label}
+          type={type}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="auth-input"
+          minLength={minLength}
+          required={required}
+          autoComplete={autoComplete}
+        />
+      </div>
     </div>
   )
 }
 
-// ─── Error / Alert Banner ─────────────────────────────────────────────────────
 function AuthAlert({ message }: { message: string }) {
   return (
     <motion.div
-      className="auth2-alert"
-      initial={{ opacity: 0, y: -8 }}
+      className="auth-alert"
+      initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: 0.2 }}
     >
       <i className="bi bi-exclamation-circle-fill" /> {message}
     </motion.div>
   )
 }
 
-// ─── Success State ────────────────────────────────────────────────────────────
 function AuthSuccess({ icon, title, body, cta, onCta }: {
   icon: string; title: string; body: React.ReactNode
   cta: string; onCta: () => void
 }) {
   return (
-    <motion.div className="auth2-success-wrap" variants={fadeUp} initial="hidden" animate="visible">
-      <div className="auth2-success-icon">
+    <motion.div className="auth-success-wrap" variants={fadeUp} initial="hidden" animate="visible">
+      <div className="auth-success-icon">
         <i className={`bi ${icon}`} />
       </div>
-      <h2 className="auth2-heading mt-4 mb-2">{title}</h2>
-      <p className="auth2-muted text-center mb-5">{body}</p>
-      <button className="auth2-btn" onClick={onCta}>{cta}</button>
+      <h2 className="auth-heading mt-4 mb-2">{title}</h2>
+      <p className="auth-muted text-center mb-5">{body}</p>
+      <button className="auth-btn" onClick={onCta}>{cta}</button>
     </motion.div>
   )
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) {
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
@@ -125,7 +123,6 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
 
   if (user) return <Navigate to="/dashboard" replace />
 
-  // ── Handlers ──
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     dispatch(clearAuthError())
@@ -157,34 +154,27 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
     if (updatePassword.fulfilled.match(result)) setResetUpdated(true)
   }
 
-  // ── Side panel config per mode ──
   const panelConfig = {
     login: {
       tag: 'Welcome back',
-      headline: 'Sign in to your campaigns',
-      sub: 'Your outreach pipeline is waiting. Log in to monitor deliverability and dispatch status.',
-      stat1: { num: '99%', label: 'Inbox placement rate' },
-      stat2: { num: '90', label: 'Safe daily cap' },
+      headline: 'Sign in to manage your campaigns',
+      sub: 'Monitor deliverability, track dispatch status, and keep your outreach on schedule.',
       altText: "Don't have an account?",
       altLink: '/signup',
       altLabel: 'Create one',
     },
     signup: {
-      tag: 'Get started free',
-      headline: 'Automate cold outreach without the spam risk',
-      sub: 'Connect Gmail, upload your CSV, and let pg_cron handle cadenced dispatch — all from a single dashboard.',
-      stat1: { num: '60s', label: 'Throttle between sends' },
-      stat2: { num: '0', label: 'Plaintext secrets stored' },
+      tag: 'Get started',
+      headline: 'Cold outreach, automated',
+      sub: 'Connect Gmail, upload your list, and let pg_cron handle cadenced dispatch — all from one dashboard.',
       altText: 'Already have an account?',
       altLink: '/login',
       altLabel: 'Sign in',
     },
     'reset-password': {
       tag: 'Account recovery',
-      headline: 'Regain access in seconds',
-      sub: 'Enter the email linked to your account and we\'ll send a secure reset link straight to your inbox.',
-      stat1: { num: 'bi-shield-lock-fill', label: 'End-to-end secure' },
-      stat2: { num: 'bi-envelope-fill', label: 'Reset via email link' },
+      headline: 'Reset your password',
+      sub: "Enter the email linked to your account and we'll send a secure reset link.",
       altText: 'Remember your password?',
       altLink: '/login',
       altLabel: 'Sign in',
@@ -193,140 +183,97 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
   const panel = panelConfig[mode]
 
   return (
-    <div className="auth2-root">
-      {/* Background blobs — same as LandingPage */}
-      <div className="auth2-blob auth2-blob-1" />
-      <div className="auth2-blob auth2-blob-2" />
-
-      {/* ── Left branded side panel ── */}
+    <div className="auth-root">
       <motion.aside
-        className="auth2-side"
-        initial={{ opacity: 0, x: -30 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
+        className="auth-side"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, ease: easeOut }}
       >
-        {/* Back to home */}
-        <Link to="/" className="auth2-back-link">
+        <Link to="/" className="auth-back-link">
           <i className="bi bi-arrow-left" /> Back to home
         </Link>
 
-        <div className="auth2-side-content">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.65, ease: EASE_OUT_EXPO }}
-          >
-            {/* Brand mark */}
-            <div className="auth2-side-brand">
-              <div className="auth2-side-logo">
-                <LogoSvg size={22} />
-              </div>
-              <span>Reachy</span>
-            </div>
+        <div className="auth-side-content">
+          <div className="auth-side-brand">
+            <LogoSvg size={22} />
+            <span>Reachy</span>
+          </div>
 
-            <div className="auth2-side-tag">{panel.tag}</div>
-            <h2 className="auth2-side-headline">{panel.headline}</h2>
-            <p className="auth2-side-sub">{panel.sub}</p>
-
-            {/* Stats row */}
-            <div className="auth2-side-stats">
-              <div className="auth2-side-stat">
-                <div className="auth2-side-stat-num">{panel.stat1.num.startsWith('bi-') ? <i className={`bi ${panel.stat1.num}`}></i> : panel.stat1.num}</div>
-                <div className="auth2-side-stat-label">{panel.stat1.label}</div>
-              </div>
-              <div className="auth2-side-stat-divider" />
-              <div className="auth2-side-stat">
-                <div className="auth2-side-stat-num">{panel.stat2.num.startsWith('bi-') ? <i className={`bi ${panel.stat2.num}`}></i> : panel.stat2.num}</div>
-                <div className="auth2-side-stat-label">{panel.stat2.label}</div>
-              </div>
-            </div>
-
-            {/* Trust badges */}
-            <div className="auth2-side-badges">
-              <div className="auth2-side-badge"><i className="bi bi-shield-check" /> Vault-encrypted secrets</div>
-              <div className="auth2-side-badge"><i className="bi bi-clock-history" /> pg_cron scheduling</div>
-              <div className="auth2-side-badge"><i className="bi bi-google" /> Gmail SMTP</div>
-            </div>
-          </motion.div>
+          <div className="auth-side-tag">{panel.tag}</div>
+          <h2 className="auth-side-headline">{panel.headline}</h2>
+          <p className="auth-side-sub">{panel.sub}</p>
         </div>
 
-        {/* Alt action (mobile bottom of side) */}
-        <div className="auth2-side-alt">
+        <div className="auth-side-alt">
           {panel.altText}{' '}
-          <Link to={panel.altLink} className="auth2-side-alt-link">{panel.altLabel}</Link>
+          <Link to={panel.altLink} className="auth-side-alt-link">{panel.altLabel}</Link>
         </div>
       </motion.aside>
 
-      {/* ── Right form panel ── */}
-      <main className="auth2-main">
-        {/* Mobile header bar (hidden on desktop) */}
-        <div className="auth2-mobile-header d-lg-none">
-          <Link to="/" className="auth2-mobile-back" aria-label="Back to home">
+      <main className="auth-main">
+        <div className="auth-mobile-header d-lg-none">
+          <Link to="/" className="auth-mobile-back" aria-label="Back to home">
             <i className="bi bi-arrow-left" />
           </Link>
-          <div className="auth2-mobile-tag">{panel.tag}</div>
+          <div className="auth-mobile-tag">{panel.tag}</div>
         </div>
 
         <motion.div
-          className="auth2-card"
-          initial={{ opacity: 0, y: 28 }}
+          className="auth-card"
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, delay: 0.1, ease: EASE_OUT_EXPO }}
+          transition={{ duration: 0.5, delay: 0.1, ease: easeOut }}
         >
-          {/* Mobile brand logo (hidden on desktop) */}
-          <div className="auth2-card-brand d-lg-none">
-            <LogoSvg size={24} />
+          <div className="auth-card-brand d-lg-none">
+            <LogoSvg size={22} />
             <span>Reachy</span>
           </div>
 
           <AnimatePresence mode="wait">
-
-            {/* ════ LOGIN ════ */}
             {mode === 'login' && (
               <motion.div key="login" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
-                <div className="auth2-card-header">
-                  <h1 className="auth2-heading">Sign in</h1>
-                  <p className="auth2-muted">Welcome back — enter your credentials below.</p>
+                <div className="auth-card-header">
+                  <h1 className="auth-heading">Sign in</h1>
+                  <p className="auth-muted">Enter your credentials to continue.</p>
                 </div>
 
-                <form onSubmit={handleLogin} className="auth2-form">
-                  <AuthInput icon="bi-envelope" type="email" placeholder="Email address" value={loginEmail} onChange={setLoginEmail} required autoComplete="email" />
-                  <AuthInput icon="bi-lock" type="password" placeholder="Password" value={loginPassword} onChange={setLoginPassword} required autoComplete="current-password" />
+                <form onSubmit={handleLogin} className="auth-form">
+                  <AuthInput label="Email" icon="bi-envelope" type="email" placeholder="you@example.com" value={loginEmail} onChange={setLoginEmail} required autoComplete="email" />
+                  <AuthInput label="Password" icon="bi-lock" type="password" placeholder="Enter your password" value={loginPassword} onChange={setLoginPassword} required autoComplete="current-password" />
 
-                  <div className="auth2-form-row">
-                    <Link to="/reset-password" className="auth2-link-sm">Forgot password?</Link>
+                  <div className="auth-form-row">
+                    <Link to="/reset-password" className="auth-link-sm">Forgot password?</Link>
                   </div>
 
                   <AnimatePresence>
                     {error && mode === 'login' && <AuthAlert message={error} />}
                   </AnimatePresence>
 
-                  <button type="submit" className="auth2-btn" disabled={loading}>
+                  <button type="submit" className="auth-btn" disabled={loading}>
                     {loading ? <span className="spinner-border spinner-border-sm me-2" /> : null}
-                    Sign In <i className="bi bi-arrow-right ms-1" />
+                    Sign In
                   </button>
 
-                  <div className="auth2-divider"><span>or</span></div>
-                  <p className="auth2-alt-text">
+                  <p className="auth-alt-text">
                     Don't have an account?{' '}
-                    <Link to="/signup" className="auth2-link">Create one free</Link>
+                    <Link to="/signup" className="auth-link">Create one free</Link>
                   </p>
                 </form>
               </motion.div>
             )}
 
-            {/* ════ SIGNUP ════ */}
             {mode === 'signup' && !signupDone && (
               <motion.div key="signup" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
-                <div className="auth2-card-header">
-                  <h1 className="auth2-heading">Create account</h1>
-                  <p className="auth2-muted">Free forever. No credit card required.</p>
+                <div className="auth-card-header">
+                  <h1 className="auth-heading">Create account</h1>
+                  <p className="auth-muted">Free forever. No credit card required.</p>
                 </div>
 
-                <form onSubmit={handleSignup} className="auth2-form">
-                  <AuthInput icon="bi-envelope" type="email" placeholder="Email address" value={signupEmail} onChange={setSignupEmail} required autoComplete="email" />
-                  <AuthInput icon="bi-lock" type="password" placeholder="Password" value={signupPassword} onChange={setSignupPassword} minLength={6} required autoComplete="new-password" />
-                  <AuthInput icon="bi-shield-lock" type="password" placeholder="Confirm password" value={signupConfirm} onChange={setSignupConfirm} required autoComplete="new-password" />
+                <form onSubmit={handleSignup} className="auth-form">
+                  <AuthInput label="Email" icon="bi-envelope" type="email" placeholder="you@example.com" value={signupEmail} onChange={setSignupEmail} required autoComplete="email" />
+                  <AuthInput label="Password" icon="bi-lock" type="password" placeholder="Choose a password" value={signupPassword} onChange={setSignupPassword} minLength={6} required autoComplete="new-password" />
+                  <AuthInput label="Confirm password" icon="bi-shield-lock" type="password" placeholder="Confirm your password" value={signupConfirm} onChange={setSignupConfirm} required autoComplete="new-password" />
 
                   <AnimatePresence>
                     {(localError || (error && mode === 'signup')) && (
@@ -334,21 +281,19 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
                     )}
                   </AnimatePresence>
 
-                  <button type="submit" className="auth2-btn" disabled={loading}>
+                  <button type="submit" className="auth-btn" disabled={loading}>
                     {loading ? <span className="spinner-border spinner-border-sm me-2" /> : null}
-                    Create Account <i className="bi bi-arrow-right ms-1" />
+                    Create Account
                   </button>
 
-                  <div className="auth2-divider"><span>or</span></div>
-                  <p className="auth2-alt-text">
+                  <p className="auth-alt-text">
                     Already have an account?{' '}
-                    <Link to="/login" className="auth2-link">Sign in</Link>
+                    <Link to="/login" className="auth-link">Sign in</Link>
                   </p>
                 </form>
               </motion.div>
             )}
 
-            {/* ════ SIGNUP SUCCESS ════ */}
             {mode === 'signup' && signupDone && (
               <motion.div key="signup-done" variants={fadeIn} initial="hidden" animate="visible">
                 <AuthSuccess
@@ -361,29 +306,27 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
               </motion.div>
             )}
 
-            {/* ════ RESET — send link ════ */}
             {mode === 'reset-password' && !isResetCallback && !resetSent && (
               <motion.div key="reset-send" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
-                <div className="auth2-card-header">
-                  <h1 className="auth2-heading">Reset password</h1>
-                  <p className="auth2-muted">Enter your email and we'll send a secure recovery link.</p>
+                <div className="auth-card-header">
+                  <h1 className="auth-heading">Reset password</h1>
+                  <p className="auth-muted">We'll send a recovery link to your email.</p>
                 </div>
 
-                <form onSubmit={handleSendReset} className="auth2-form">
-                  <AuthInput icon="bi-envelope" type="email" placeholder="Email address" value={resetEmail} onChange={setResetEmail} required autoComplete="email" />
+                <form onSubmit={handleSendReset} className="auth-form">
+                  <AuthInput label="Email" icon="bi-envelope" type="email" placeholder="you@example.com" value={resetEmail} onChange={setResetEmail} required autoComplete="email" />
 
                   <AnimatePresence>
                     {error && mode === 'reset-password' && <AuthAlert message={error} />}
                   </AnimatePresence>
 
-                  <button type="submit" className="auth2-btn" disabled={loading}>
+                  <button type="submit" className="auth-btn" disabled={loading}>
                     {loading ? <span className="spinner-border spinner-border-sm me-2" /> : null}
-                    Send Reset Link <i className="bi bi-send ms-1" />
+                    Send Reset Link
                   </button>
 
-                  <div className="auth2-divider"><span>or</span></div>
-                  <p className="auth2-alt-text">
-                    <Link to="/login" className="auth2-link">
+                  <p className="auth-alt-text">
+                    <Link to="/login" className="auth-link">
                       <i className="bi bi-arrow-left me-1" />Back to sign in
                     </Link>
                   </p>
@@ -391,7 +334,6 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
               </motion.div>
             )}
 
-            {/* ════ RESET — link sent ════ */}
             {mode === 'reset-password' && !isResetCallback && resetSent && (
               <motion.div key="reset-sent" variants={fadeIn} initial="hidden" animate="visible">
                 <AuthSuccess
@@ -404,30 +346,28 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
               </motion.div>
             )}
 
-            {/* ════ RESET — set new password ════ */}
             {mode === 'reset-password' && isResetCallback && !resetUpdated && (
               <motion.div key="reset-new-pw" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
-                <div className="auth2-card-header">
-                  <h1 className="auth2-heading">New password</h1>
-                  <p className="auth2-muted">Choose a strong password for your account.</p>
+                <div className="auth-card-header">
+                  <h1 className="auth-heading">New password</h1>
+                  <p className="auth-muted">Choose a strong password for your account.</p>
                 </div>
 
-                <form onSubmit={handleUpdatePassword} className="auth2-form">
-                  <AuthInput icon="bi-lock" type="password" placeholder="New password" value={resetNewPassword} onChange={setResetNewPassword} minLength={6} required autoComplete="new-password" />
+                <form onSubmit={handleUpdatePassword} className="auth-form">
+                  <AuthInput label="New password" icon="bi-lock" type="password" placeholder="Enter new password" value={resetNewPassword} onChange={setResetNewPassword} minLength={6} required autoComplete="new-password" />
 
                   <AnimatePresence>
                     {error && mode === 'reset-password' && <AuthAlert message={error} />}
                   </AnimatePresence>
 
-                  <button type="submit" className="auth2-btn" disabled={loading}>
+                  <button type="submit" className="auth-btn" disabled={loading}>
                     {loading ? <span className="spinner-border spinner-border-sm me-2" /> : null}
-                    Update Password <i className="bi bi-check2 ms-1" />
+                    Update Password
                   </button>
                 </form>
               </motion.div>
             )}
 
-            {/* ════ RESET — updated ════ */}
             {mode === 'reset-password' && resetUpdated && (
               <motion.div key="reset-done" variants={fadeIn} initial="hidden" animate="visible">
                 <AuthSuccess
@@ -439,27 +379,18 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
                 />
               </motion.div>
             )}
-
           </AnimatePresence>
         </motion.div>
 
-        {/* Mobile trust bar (hidden on desktop) */}
-        <div className="auth2-mobile-trust d-lg-none">
-          <div className="auth2-mobile-trust-item"><i className="bi bi-shield-check" /> Vault-encrypted</div>
-          <div className="auth2-mobile-trust-item"><i className="bi bi-clock-history" /> pg_cron</div>
-          <div className="auth2-mobile-trust-item"><i className="bi bi-google" /> Gmail SMTP</div>
-        </div>
-
-        {/* Footer note */}
         <motion.p
-          className="auth2-footer-note"
+          className="auth-footer-note"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
+          transition={{ delay: 0.4, duration: 0.4 }}
         >
           By continuing you agree to our{' '}
-          <Link to="/" className="auth2-link-sm">Terms</Link>{' '}and{' '}
-          <Link to="/" className="auth2-link-sm">Privacy Policy</Link>.
+          <Link to="/" className="auth-link-sm">Terms</Link>{' '}and{' '}
+          <Link to="/" className="auth-link-sm">Privacy Policy</Link>.
         </motion.p>
       </main>
     </div>
