@@ -20,10 +20,9 @@ dist-ssr
 .DS_Store
 *.suo
 *.ntvs*
-*.njsproj
+*.njsproj*
 *.sln
 *.sw?
 .vercel
 .opencode/
-AGENTS.md
 design-system/
