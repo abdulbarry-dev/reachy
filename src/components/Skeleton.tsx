@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+
 
 interface SkeletonProps {
   width?: string | number
@@ -18,43 +18,6 @@ export function Skeleton({ width, height = 16, borderRadius = 6, className, styl
         borderRadius: typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius,
         ...style,
       }}
-    />
-  )
-}
-
-interface SkeletonTextProps {
-  lines?: number
-  lastLineWidth?: string
-  lineHeight?: number
-  className?: string
-}
-
-export function SkeletonText({ lines = 3, lastLineWidth = '60%', lineHeight = 14, className }: SkeletonTextProps) {
-  return (
-    <div className={`skeleton-text ${className ?? ''}`} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {Array.from({ length: lines }).map((_, i) => (
-        <Skeleton
-          key={i}
-          height={lineHeight}
-          width={i === lines - 1 ? lastLineWidth : '100%'}
-        />
-      ))}
-    </div>
-  )
-}
-
-interface SkeletonAvatarProps {
-  size?: number
-  className?: string
-}
-
-export function SkeletonAvatar({ size = 40, className }: SkeletonAvatarProps) {
-  return (
-    <Skeleton
-      width={size}
-      height={size}
-      borderRadius="50%"
-      className={className}
     />
   )
 }
@@ -127,15 +90,4 @@ export function SkeletonTable({ rows = 5, columns = 4, delay = 0 }: SkeletonTabl
       ))}
     </div>
   )
-}
-
-interface SkeletonWrapperProps {
-  children: ReactNode
-  loading: boolean
-  skeleton: ReactNode
-}
-
-export function SkeletonWrapper({ children, loading, skeleton }: SkeletonWrapperProps) {
-  if (loading) return <>{skeleton}</>
-  return <>{children}</>
 }

@@ -44,15 +44,15 @@ const staggerFast: Variants = {
 const cardHoverEffect = {
   y: -8,
   scale: 1.015,
-  boxShadow: '0 24px 48px rgba(58, 179, 151, 0.12)',
-  borderColor: 'rgba(58, 179, 151, 0.25)',
+  boxShadow: 'var(--lp-card-hover-shadow, 0 24px 48px rgba(58, 179, 151, 0.12))',
+  borderColor: 'var(--lp-card-hover-border, rgba(58, 179, 151, 0.25))',
   transition: { duration: 0.4, ease: EASE_OUT_EXPO }
 }
 
 const highlightedCardHover = {
   y: -8,
   scale: 1.015,
-  boxShadow: '0 28px 56px rgba(58, 179, 151, 0.32)',
+  boxShadow: 'var(--lp-card-hover-highlight-shadow, 0 28px 56px rgba(58, 179, 151, 0.32))',
   transition: { duration: 0.4, ease: EASE_OUT_EXPO }
 }
 
@@ -266,6 +266,8 @@ export function LandingPage() {
 
   return (
     <div className="landing-wrapper min-vh-100">
+      <a href="#main-landing-content" className="skip-link visually-hidden-focusable">Skip to content</a>
+
       {/* Background Blobs */}
       <div className="lp-blob lp-blob-1" />
       <div className="lp-blob lp-blob-2" />
@@ -339,9 +341,9 @@ export function LandingPage() {
             />
             <motion.aside
               className="lp-sidebar"
-              initial={{ x: -280 }}
+              initial={{ x: '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: -280 }}
+              exit={{ x: '-100%' }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="lp-sidebar-header">
@@ -371,7 +373,7 @@ export function LandingPage() {
                 ))}
               </nav>
 
-              <div className="lp-sidebar-footer">
+<div className="lp-sidebar-footer">
                 {user ? (
                   <Button className="btn-lp-nav-cta w-100" onClick={() => { setMobileOpen(false); navigate('/dashboard'); }}>
                     Go to Dashboard <i className="bi bi-arrow-right ms-1" />
@@ -389,7 +391,7 @@ export function LandingPage() {
       </AnimatePresence>
 
       {/* ── Hero Section ── */}
-      <section className="lp-section pt-5 pb-5">
+      <section id="main-landing-content" className="lp-section pt-5 pb-5">
         <Container className="pt-5 mt-4">
           <div className="hero-container-card" ref={heroRef}>
             {/* Animated glow ring behind the card */}
@@ -976,7 +978,7 @@ export function LandingPage() {
                       { icon: 'bi-linkedin', href: 'https://www.linkedin.com/in/abdulbarryguenichi/', label: 'LinkedIn' },
                     ].map(({ icon, href, label }) => (
                       <a key={icon} href={href} target="_blank" rel="noopener noreferrer" className="text-decoration-none text-secondary" aria-label={label}>
-                        <motion.i className={`bi ${icon}`} aria-hidden="true" whileHover={{ color: '#3AB397', scale: 1.2 }} />
+                        <motion.i className={`bi ${icon}`} aria-hidden="true" whileHover={{ color: 'var(--reachy-primary, #3AB397)', scale: 1.2 }} />
                       </a>
                     ))}
                   </div>

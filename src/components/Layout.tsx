@@ -4,7 +4,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
 import { signOut } from '../store/authSlice'
-import { useToast } from './ToastProvider'
+import { useToast } from '../hooks/useToast'
 import { ConfirmModal } from './ConfirmModal'
 import type { RootState, AppDispatch } from '../store'
 
@@ -99,7 +99,7 @@ export function Layout() {
           className={collapsed && !isMobile ? 'sidebar is-collapsed' : 'sidebar'}
           animate={
             isMobile
-              ? { x: mobileOpen ? 0 : -(SIDEBAR_EXPANDED + 20) }
+              ? { x: mobileOpen ? 0 : '-100%' }
               : { width: sidebarWidth }
           }
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
@@ -237,7 +237,7 @@ export function Layout() {
             <Stack direction="horizontal" gap={3} className="justify-content-center text-muted small">
               <i className="bi bi-shield-check" />
               <span>Reachy — Cold-email automation</span>
-              <span className="text-border" style={{ width: 1, height: 14, background: '#e2e8f0' }} />
+              <span className="text-border" style={{ width: 1, height: 14, background: 'var(--reachy-border-color)' }} />
               <a href="https://github.com/abdulbarry-dev/reachy" target="_blank" rel="noopener noreferrer" className="text-decoration-none text-muted" aria-label="GitHub">
                 <i className="bi bi-github" aria-hidden="true"></i>
               </a>

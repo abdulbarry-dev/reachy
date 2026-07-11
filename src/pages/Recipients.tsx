@@ -5,7 +5,7 @@ import { addRecipient, addRecipients, clearRecipients, removeRecipients, updateR
 import { AnimatedPage } from '../components/AnimatedPage'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { FileDropzone } from '../components/FileDropzone'
-import { useToast } from '../components/ToastProvider'
+import { useToast } from '../hooks/useToast'
 import { recipientsToCsv } from '../utils/fileParsers'
 import type { RootState, AppDispatch } from '../store'
 import type { ImportedRecipient } from '../types'

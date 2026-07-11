@@ -5,7 +5,7 @@ import { useRecipients } from '../hooks/useRecipients'
 import { useCampaigns } from '../hooks/useCampaigns'
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useToast } from '../components/ToastProvider'
+import { useToast } from '../hooks/useToast'
 import { SkeletonTable } from '../components/Skeleton'
 
 
