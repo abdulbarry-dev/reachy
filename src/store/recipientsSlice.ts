@@ -52,18 +52,20 @@ const recipientsSlice = createSlice({
       state.items.push(normalized)
       saveRecipients(state.items)
     },
-    removeRecipients(state, action: PayloadAction<number[]>) {
-      state.items = state.items.filter((_, i) => !action.payload.includes(i))
+    removeRecipients(state, action: PayloadAction<string[]>) {
+      const emails = new Set(action.payload.map((e) => e.toLowerCase()))
+      state.items = state.items.filter((r) => !emails.has(r.email.toLowerCase()))
       saveRecipients(state.items)
     },
     clearRecipients(state) {
       state.items = []
       saveRecipients(state.items)
     },
-    updateRecipient(state, action: PayloadAction<{ index: number; data: Partial<ImportedRecipient> }>) {
-      const { index, data } = action.payload
-      if (index >= 0 && index < state.items.length) {
-        state.items[index] = { ...state.items[index], ...data }
+    updateRecipient(state, action: PayloadAction<{ email: string; data: Partial<ImportedRecipient> }>) {
+      const { email, data } = action.payload
+      const idx = state.items.findIndex((r) => r.email.toLowerCase() === email.toLowerCase())
+      if (idx >= 0) {
+        state.items[idx] = { ...state.items[idx], ...data }
         saveRecipients(state.items)
       }
     },

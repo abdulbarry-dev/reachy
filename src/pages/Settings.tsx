@@ -108,12 +108,12 @@ export function Settings() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return
-    const ok = await deleteAccount(deleteTarget)
+    const { ok, error } = await deleteAccount(deleteTarget)
     setDeleteTarget(null)
     if (ok) {
       toast('Email account removed', 'success')
     } else {
-      toast('Failed to remove account', 'error')
+      toast(error ?? 'Failed to remove account', 'error')
     }
   }
 

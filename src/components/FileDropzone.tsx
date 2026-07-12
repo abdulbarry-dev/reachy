@@ -47,7 +47,7 @@ export function FileDropzone({ onUpload }: FileDropzoneProps) {
     [onUpload],
   )
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
     accept: {
       'application/json': ['.json'],
@@ -56,7 +56,13 @@ export function FileDropzone({ onUpload }: FileDropzoneProps) {
       'application/vnd.ms-excel': ['.xls'],
     },
     multiple: true,
+    maxSize: 5 * 1024 * 1024,
+    maxFiles: 10,
   })
+
+  const rejectionMessage = fileRejections.length > 0
+    ? `${fileRejections.length} file(s) rejected. Max 10 files, 5 MB each. Only JSON, CSV, and Excel are supported.`
+    : null
 
   return (
     <div className="flex-grow-1 d-flex">
@@ -80,6 +86,7 @@ export function FileDropzone({ onUpload }: FileDropzoneProps) {
         )}
       </div>
       {error && <Alert variant="danger" className="mt-3 mb-0">{error}</Alert>}
+      {rejectionMessage && <Alert variant="warning" className="mt-3 mb-0">{rejectionMessage}</Alert>}
     </div>
   )
 }

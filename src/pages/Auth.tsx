@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import { signIn, signUp, resetPassword, updatePassword, clearAuthError } from '../store/authSlice'
+import { supabase } from '../lib/supabase'
 import type { RootState, AppDispatch } from '../store'
 
 const easeOut = [0.16, 1, 0.3, 1] as const
@@ -113,6 +114,7 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
   const [resetNewPassword, setResetNewPassword] = useState('')
   const [resetSent, setResetSent] = useState(false)
   const [resetUpdated, setResetUpdated] = useState(false)
+  const [callbackLoading, setCallbackLoading] = useState(false)
 
   const isResetCallback = mode === 'reset-password' && (searchParams.has('code') || window.location.hash.includes('access_token'))
 
@@ -121,7 +123,16 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
     setLocalError('')
   }, [mode, dispatch])
 
-  if (user) return <Navigate to="/dashboard" replace />
+  useEffect(() => {
+    if (!isResetCallback) return
+    const code = searchParams.get('code')
+    if (code) {
+      setCallbackLoading(true)
+      supabase.auth.exchangeCodeForSession(code).catch(() => {}).finally(() => setCallbackLoading(false))
+    }
+  }, [isResetCallback, searchParams])
+
+  if (user && !isResetCallback) return <Navigate to="/dashboard" replace />
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -347,25 +358,37 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
             )}
 
             {mode === 'reset-password' && isResetCallback && !resetUpdated && (
-              <motion.div key="reset-new-pw" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
-                <div className="auth-card-header">
-                  <h1 className="auth-heading">New password</h1>
-                  <p className="auth-muted">Choose a strong password for your account.</p>
-                </div>
+              callbackLoading || !user ? (
+                <motion.div key="reset-verifying" variants={fadeIn} initial="hidden" animate="visible">
+                  <div className="auth-card-header text-center">
+                    <div className="spinner-border text-primary mb-3" role="status">
+                      <span className="visually-hidden">Verifying recovery link</span>
+                    </div>
+                    <h1 className="auth-heading">Verifying recovery link</h1>
+                    <p className="auth-muted">Please wait while we verify your reset link.</p>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div key="reset-new-pw" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
+                  <div className="auth-card-header">
+                    <h1 className="auth-heading">New password</h1>
+                    <p className="auth-muted">Choose a strong password for your account.</p>
+                  </div>
 
-                <form onSubmit={handleUpdatePassword} className="auth-form">
-                  <AuthInput label="New password" icon="bi-lock" type="password" placeholder="Enter new password" value={resetNewPassword} onChange={setResetNewPassword} minLength={6} required autoComplete="new-password" />
+                  <form onSubmit={handleUpdatePassword} className="auth-form">
+                    <AuthInput label="New password" icon="bi-lock" type="password" placeholder="Enter new password" value={resetNewPassword} onChange={setResetNewPassword} minLength={6} required autoComplete="new-password" />
 
-                  <AnimatePresence>
-                    {error && mode === 'reset-password' && <AuthAlert message={error} />}
-                  </AnimatePresence>
+                    <AnimatePresence>
+                      {error && mode === 'reset-password' && <AuthAlert message={error} />}
+                    </AnimatePresence>
 
-                  <button type="submit" className="auth-btn" disabled={loading}>
-                    {loading ? <span className="spinner-border spinner-border-sm me-2" /> : null}
-                    Update Password
-                  </button>
-                </form>
-              </motion.div>
+                    <button type="submit" className="auth-btn" disabled={loading}>
+                      {loading ? <span className="spinner-border spinner-border-sm me-2" /> : null}
+                      Update Password
+                    </button>
+                  </form>
+                </motion.div>
+              )
             )}
 
             {mode === 'reset-password' && resetUpdated && (

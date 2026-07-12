@@ -1,10 +1,11 @@
-import { useState } from 'react'
-import { Alert, Button, Card, Col, Dropdown, Form, Modal, Row, Table } from 'react-bootstrap'
+import { useState, useCallback } from 'react'
+import { Alert, Button, Card, Col, Form, Modal, Row, Table } from 'react-bootstrap'
 import { useDispatch, useSelector } from 'react-redux'
 import { addRecipient, addRecipients, clearRecipients, removeRecipients, updateRecipient } from '../store/recipientsSlice'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { FileDropzone } from '../components/FileDropzone'
+import { RecipientRow } from '../components/RecipientRow'
 import { useToast } from '../hooks/useToast'
 import { recipientsToCsv } from '../utils/fileParsers'
 import type { RootState, AppDispatch } from '../store'
@@ -29,14 +30,17 @@ export function Recipients() {
   const [name, setName] = useState('')
   const [company, setCompany] = useState('')
   const [addedCount, setAddedCount] = useState(0)
-  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [selected, setSelected] = useState<Set<string>>(new Set())
 
-  const [editTarget, setEditTarget] = useState<number | null>(null)
+  const [editTarget, setEditTarget] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editCompany, setEditCompany] = useState('')
-  const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [bulkDelete, setBulkDelete] = useState(false)
   const [clearAll, setClearAll] = useState(false)
+
+  const editingRecipient = editTarget ? recipients.find((r) => r.email.toLowerCase() === editTarget.toLowerCase()) : undefined
+  const deletingRecipient = deleteTarget ? recipients.find((r) => r.email.toLowerCase() === deleteTarget.toLowerCase()) : undefined
 
   const handleUpload = (parsed: ImportedRecipient[]) => {
     dispatch(addRecipients(parsed))
@@ -54,69 +58,72 @@ export function Recipients() {
     setCompany('')
   }
 
-  const toggleAll = () => {
-    if (selected.size === recipients.length) {
-      setSelected(new Set())
-    } else {
-      setSelected(new Set(recipients.map((_, i) => i)))
-    }
-  }
+  const toggleAll = useCallback(() => {
+    setSelected((prev) => {
+      if (prev.size === recipients.length) return new Set<string>()
+      return new Set(recipients.map((r) => r.email))
+    })
+  }, [recipients])
 
-  const toggleOne = (idx: number) => {
-    const next = new Set(selected)
-    if (next.has(idx)) next.delete(idx)
-    else next.add(idx)
-    setSelected(next)
-  }
+  const toggleOne = useCallback((email: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(email)) next.delete(email)
+      else next.add(email)
+      return next
+    })
+  }, [])
 
-  const openEdit = (i: number) => {
-    setEditTarget(i)
-    setEditName(recipients[i].name ?? '')
-    setEditCompany(recipients[i].company ?? '')
-  }
+  const openEdit = useCallback((email: string) => {
+    const recipient = recipients.find((r) => r.email.toLowerCase() === email.toLowerCase())
+    if (!recipient) return
+    setEditTarget(email)
+    setEditName(recipient.name ?? '')
+    setEditCompany(recipient.company ?? '')
+  }, [recipients])
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = useCallback(() => {
     if (editTarget !== null) {
-      dispatch(updateRecipient({ index: editTarget, data: { name: editName.trim() || undefined, company: editCompany.trim() || undefined } }))
+      dispatch(updateRecipient({ email: editTarget, data: { name: editName.trim() || undefined, company: editCompany.trim() || undefined } }))
       setEditTarget(null)
       toast('Recipient updated', 'success')
     }
-  }
+  }, [dispatch, editTarget, editName, editCompany, toast])
 
-  const handleDeleteSingle = () => {
+  const handleDeleteSingle = useCallback(() => {
     if (deleteTarget !== null) {
-      const removed = recipients[deleteTarget]
+      const removed = recipients.find((r) => r.email.toLowerCase() === deleteTarget.toLowerCase())
       dispatch(removeRecipients([deleteTarget]))
       setDeleteTarget(null)
       if (removed) toast(`Removed ${removed.email}`, 'success')
     }
-  }
+  }, [deleteTarget, dispatch, recipients, toast])
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = useCallback(() => {
     const count = selected.size
     dispatch(removeRecipients(Array.from(selected)))
     setSelected(new Set())
     setBulkDelete(false)
     toast(`${count} ${count === 1 ? 'recipient' : 'recipients'} removed`, 'success')
-  }
+  }, [selected, dispatch, toast])
 
-  const handleClearAll = () => {
+  const handleClearAll = useCallback(() => {
     const count = recipients.length
     dispatch(clearRecipients())
     setSelected(new Set())
     setClearAll(false)
     toast(`All ${count} recipients cleared`, 'success')
-  }
+  }, [recipients.length, dispatch, toast])
 
-  const exportAllJson = () => download('recipients.json', JSON.stringify(recipients, null, 2), 'application/json')
+  const exportAllJson = useCallback(() => download('recipients.json', JSON.stringify(recipients, null, 2), 'application/json'), [recipients])
 
-  const exportAllCsv = () => download('recipients.csv', recipientsToCsv(recipients), 'text/csv')
+  const exportAllCsv = useCallback(() => download('recipients.csv', recipientsToCsv(recipients), 'text/csv'), [recipients])
 
-  const exportSingleJson = (i: number) =>
-    download(`recipient-${recipients[i].email}.json`, JSON.stringify([recipients[i]], null, 2), 'application/json')
+  const exportSingleJson = useCallback((i: number) =>
+    download(`recipient-${recipients[i].email}.json`, JSON.stringify([recipients[i]], null, 2), 'application/json'), [recipients])
 
-  const exportSingleCsv = (i: number) =>
-    download(`recipient-${recipients[i].email}.csv`, recipientsToCsv([recipients[i]]), 'text/csv')
+  const exportSingleCsv = useCallback((i: number) =>
+    download(`recipient-${recipients[i].email}.csv`, recipientsToCsv([recipients[i]]), 'text/csv'), [recipients])
 
   return (
     <AnimatedPage>
@@ -310,44 +317,17 @@ export function Recipients() {
                 </thead>
                 <tbody>
                   {recipients.map((r, i) => (
-                    <tr key={`${r.email}-${i}`}>
-                      <td>
-                        <Form.Check
-                          checked={selected.has(i)}
-                          onChange={() => toggleOne(i)}
-                          aria-label={`Select ${r.email}`}
-                        />
-                      </td>
-                      <td className="fw-medium cell-email" title={r.email}>{r.email}</td>
-                      <td className="col-name">{r.name || '—'}</td>
-                      <td className="col-company">{r.company || '—'}</td>
-                      <td className="cell-actions text-end">
-                        <Dropdown align="end">
-                          <Dropdown.Toggle
-                            variant="link"
-                            className="p-1 border-0 no-caret row-action-toggle"
-                            aria-label={`Actions for ${r.email}`}
-                          >
-                            <i className="bi bi-three-dots-vertical"></i>
-                          </Dropdown.Toggle>
-                          <Dropdown.Menu>
-                            <Dropdown.Item onClick={() => openEdit(i)}>
-                              <i className="bi bi-pencil me-2"></i>Edit
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={() => setDeleteTarget(i)} className="text-danger">
-                              <i className="bi bi-trash me-2"></i>Delete
-                            </Dropdown.Item>
-                            <Dropdown.Divider />
-                            <Dropdown.Item onClick={() => exportSingleJson(i)}>
-                              <i className="bi bi-download me-2"></i>Export as JSON
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={() => exportSingleCsv(i)}>
-                              <i className="bi bi-filetype-csv me-2"></i>Export as CSV
-                            </Dropdown.Item>
-                          </Dropdown.Menu>
-                        </Dropdown>
-                      </td>
-                    </tr>
+                    <RecipientRow
+                      key={`${r.email}-${i}`}
+                      recipient={r}
+                      index={i}
+                      selected={selected.has(r.email)}
+                      onToggle={toggleOne}
+                      onEdit={openEdit}
+                      onDelete={setDeleteTarget}
+                      onExportJson={exportSingleJson}
+                      onExportCsv={exportSingleCsv}
+                    />
                   ))}
                   {recipients.length === 0 && (
                     <tr>
@@ -384,7 +364,7 @@ export function Recipients() {
                 <Form.Control
                   id="edit-email"
                   type="email"
-                  value={recipients[editTarget].email}
+                  value={editingRecipient?.email ?? ''}
                   disabled
                   className="form-control-reachy"
                 />
@@ -433,7 +413,7 @@ export function Recipients() {
       <ConfirmModal
         show={deleteTarget !== null}
         title="Delete recipient"
-        message={deleteTarget !== null ? `Remove "${recipients[deleteTarget].email}" from your list? This cannot be undone.` : ''}
+        message={deletingRecipient ? `Remove "${deletingRecipient.email}" from your list? This cannot be undone.` : ''}
         confirmLabel="Delete"
         icon="bi-trash"
         onConfirm={handleDeleteSingle}

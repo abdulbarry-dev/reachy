@@ -89,8 +89,10 @@ serve(async (req) => {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     })
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 400,
+    const message = err instanceof Error ? err.message : String(err)
+    const status = message.includes('Unauthorized') || message.includes('Authorization') ? 401 : 400
+    return new Response(JSON.stringify({ error: message }), {
+      status,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     })
   }

@@ -24,10 +24,10 @@ Linter is `oxlint` — no ESLint config. TypeScript has `noUnusedLocals`/`noUnus
 
 - **Auth**: Supabase email/password. Session restored on mount in `App.tsx` via `getSession()` + `onAuthStateChange`. `getSession()` rejection is caught to prevent permanent loading state.
 - **Protected routes**: `ProtectedRoute` wrapper checks `state.auth.user`, renders `<Layout />` (sidebar) or redirects to `/login`.
-- **Loading states**: All hooks (`useCampaigns`, `useRecipients`, `useEmailAccounts`) use `mountedRef` pattern to prevent state updates after unmount, with `try/catch` around Supabase queries.
-- **Client → Edge Function calls**: Pages call edge functions via `fetch(getEdgeFunctionUrl(name))` passing `Authorization: Bearer ${session.access_token}` — the function uses `supabase.auth.getUser(token)` with the service role key to verify. Response bodies are guarded with `try/catch` before `.json()`.
-- **Send pipeline**: Not a loop. `pg_cron` every 60s calls `dispatch-sends` via `pg_net`. Each tick sends one email. Avoids the 150s Edge Function timeout. `dispatch-sends` also reclaims stuck `sending` recipients older than 10 minutes (`claim_pending_recipient` RPC uses `FOR UPDATE SKIP LOCKED`).
-- **dispatch-sends security**: Requires `x-cron-secret` header matching `CRON_SECRET` env var. Uses atomic `claim_pending_recipient` RPC (no TOCTOU race). HTML-escapes merge variables in outbound emails. Per-email-account rate limiting. `transporter.close()` in `finally` block. Structured `from` header `{name, address}`.
+- **Loading states**: All hooks (`useCampaigns`, `useRecipients`, `useEmailAccounts`) use SWR for data fetching. `fetcher.ts` now throws Supabase errors so they surface in the UI.
+- **Client → Edge Function calls**: Pages call edge functions via `fetch(getEdgeFunctionUrl(name))` passing `Authorization: Bearer ${session.access_token}` — the function uses `supabase.auth.getUser(token)` with the service role key to verify. Response bodies are guarded with `try/catch` before `.json()`. Auth errors return 401; validation errors return 400.
+- **Send pipeline**: Not a loop. `pg_cron` every 60s calls `dispatch-sends` via `pg_net`. Each tick sends exactly one email across all active campaigns (campaigns are processed sequentially and the function returns after the first successful send). Avoids the 150s Edge Function timeout. `dispatch-sends` also reclaims stuck `sending` recipients whose `updated_at` is older than 10 minutes (`claim_pending_recipient` RPC uses `FOR UPDATE SKIP LOCKED`).
+- **dispatch-sends security**: Requires `x-cron-secret` header matching `CRON_SECRET` env var. Uses atomic `claim_pending_recipient` RPC (no TOCTOU race). HTML-escapes merge variables in outbound emails. Per-email-account daily cap and send-rate limiting. `transporter.close()` in `finally` block. Structured `from` header `{name, address}`.
 - **App passwords** stored in Supabase Vault via `vault.create_secret()`, never in plaintext columns. Vault secrets are auto-cleaned via trigger when `email_accounts` row is deleted.
 - **CORS**: All edge functions respond with `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: POST, OPTIONS`, and `Access-Control-Allow-Headers: authorization, x-client-info, apikey, content-type`.
 - **Input validation**: `Content-Type: application/json` checked in all edge functions. `sendRateSeconds` clamped `>= 30`, `dailyCap` clamped `[1, 90]`.
@@ -45,6 +45,7 @@ Linter is `oxlint` — no ESLint config. TypeScript has `noUnusedLocals`/`noUnus
 ### Migrations
 - `001_schema.sql` — initial schema with RLS, cron scheduling, Vault integration.
 - `002_atomic_claim_and_indexes.sql` — atomic `claim_pending_recipient()` RPC (`FOR UPDATE SKIP LOCKED`); CHECK constraints `send_rate_seconds >= 30`, `daily_cap BETWEEN 1 AND 90`; indexes on `campaigns(status)`, `campaigns(user_id)`, `email_accounts(user_id)`, partial index `recipients(status) WHERE status = 'sending'`; Vault cleanup trigger on `email_accounts` DELETE; parameterized `cron.schedule` with `CRON_SECRET`.
+- `003_recipients_updated_at.sql` — adds `updated_at` to `recipients` with a backfill and a `BEFORE UPDATE` trigger; enables safe reclaim of stuck `sending` rows.
 
 ## Edge Functions
 
@@ -55,7 +56,7 @@ Linter is `oxlint` — no ESLint config. TypeScript has `noUnusedLocals`/`noUnus
 | `connect-email-account` | Validates SMTP via nodemailer, stores password in Vault, inserts email_accounts row. Cleans up Vault secret on insert failure. Closes transporter after verify. |
 | `create-campaign` | Inserts campaign + bulk-inserts recipients. Clamps rate limits server-side. Persists `company` merge variable. |
 | `start-campaign` | Flips campaign status to `queued`. |
-| `dispatch-sends` | Core send loop — atomic claim of one pending recipient, sends via nodemailer. CRON_SECRET auth. HTML escaping. Per-account rate limiting. Stuck recipient reclaim. |
+| `dispatch-sends` | Core send loop — atomic claim of one pending recipient, sends via nodemailer. CRON_SECRET auth. HTML escaping. Per-account rate limiting. Stuck recipient reclaim using `updated_at`. Processes campaigns sequentially, stops after first successful send (strictly one email per tick). |
 
 All use `npm:@supabase/supabase-js@2`, `npm:nodemailer@6`, and `https://deno.land/std@0.208.0/http/server.ts`.
 

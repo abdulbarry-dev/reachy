@@ -1,26 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { Card, Col, Row } from 'react-bootstrap'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { StatCard } from '../components/StatCard'
 import { useCampaigns } from '../hooks/useCampaigns'
 import { SkeletonStatCard, SkeletonCampaignCard } from '../components/Skeleton'
-
-const statusBadgeClass: Record<string, string> = {
-  draft: 'badge-reachy-draft',
-  queued: 'badge-reachy-queued',
-  running: 'badge-reachy-running',
-  completed: 'badge-reachy-completed',
-  paused: 'badge-reachy-paused',
-}
-
-const statusProgressBg: Record<string, string> = {
-  draft: '#3AA8AD',
-  queued: '#f59e0b',
-  running: '#3AB397',
-  completed: '#10b981',
-  paused: '#f59e0b',
-}
+import { CampaignCard } from '../components/CampaignCard'
 
 export function Dashboard() {
   const navigate = useNavigate()
@@ -36,6 +21,10 @@ export function Dashboard() {
     }
     return t
   }, [campaigns])
+
+  const handleCampaignClick = useCallback((id: string) => {
+    navigate(`/campaigns/${id}`)
+  }, [navigate])
 
   if (error) {
     return (
@@ -122,59 +111,11 @@ export function Dashboard() {
       ) : (
         <div>
           <Row className="g-4">
-            {campaigns.map((campaign) => {
-              const total = campaign.total_recipients || 0
-              const processed = campaign.sent_recipients + campaign.failed_recipients
-              const progressPercent = total > 0 ? Math.round((processed / total) * 100) : 0
-
-              return (
-                <Col key={campaign.id} md={6} lg={4}>
-                  <div>
-                    <Card
-                      className="card-reachy border-0 h-100 cursor-pointer position-relative overflow-hidden"
-                      onClick={() => navigate(`/campaigns/${campaign.id}`)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/campaigns/${campaign.id}`) } }}
-                    >
-                      <Card.Body className="p-4 d-flex flex-column justify-content-between">
-                        <div>
-                          <div className="d-flex justify-content-between align-items-center mb-4">
-                            <span className={`badge px-2.5 py-1.5 rounded-pill ${statusBadgeClass[campaign.status] ?? 'bg-secondary text-white'} fw-bold`} style={{ fontSize: '0.7rem', letterSpacing: '0.02em' }}>
-                              <i className="bi bi-circle-fill me-1.5" style={{ fontSize: '0.4rem', verticalAlign: 'middle' }}></i>
-                              {campaign.status.toUpperCase()}
-                            </span>
-                            <span className="small text-muted fw-bold">{progressPercent}%</span>
-                          </div>
-
-                          <h5 className="fw-bold text-dark mb-3" style={{ fontSize: '1.15rem', letterSpacing: '-0.02em' }}>
-                            {campaign.name}
-                          </h5>
-                          
-                          <div className="dashboard-progress mb-4">
-                            <div 
-                              className="h-100" 
-                              style={{ 
-                                width: `${progressPercent}%`, 
-                                borderRadius: 3, 
-                                transition: 'width 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-                                backgroundColor: statusProgressBg[campaign.status] ?? 'var(--reachy-primary)'
-                              }}
-                            ></div>
-                          </div>
-                        </div>
-
-                        <div className="d-flex justify-content-between flex-wrap gap-2 text-muted border-top pt-3" style={{ fontSize: '0.8rem' }}>
-                          <span><strong className="text-dark fw-bold">{campaign.sent_recipients}</strong> Sent</span>
-                          <span><strong className="text-dark fw-bold">{campaign.pending_recipients}</strong> Pending</span>
-                          <span><strong className="text-dark fw-bold">{campaign.failed_recipients}</strong> Failed</span>
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </div>
-                </Col>
-              )
-            })}
+            {campaigns.map((campaign) => (
+              <Col key={campaign.id} md={6} lg={4}>
+                <CampaignCard campaign={campaign} onClick={handleCampaignClick} />
+              </Col>
+            ))}
           </Row>
         </div>
       )}

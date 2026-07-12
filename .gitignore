@@ -26,3 +26,5 @@ dist-ssr
 .vercel
 .opencode/
 design-system/
+.agents/
+skills-lock.json

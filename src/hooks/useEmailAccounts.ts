@@ -1,65 +1,29 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import useSWR from 'swr'
 import { supabase } from '../lib/supabase'
+import { authFetcher } from '../lib/fetcher'
 import type { EmailAccount } from '../types'
 
 export function useEmailAccounts() {
-  const [accounts, setAccounts] = useState<EmailAccount[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const mountedRef = useRef(true)
+  const { data, error, isLoading, mutate } = useSWR<EmailAccount[]>('email_accounts', authFetcher)
 
-  const fetchAccounts = useCallback(async () => {
-    if (mountedRef.current) setLoading(true)
-    if (mountedRef.current) setError(null)
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        if (mountedRef.current) setLoading(false)
-        return
-      }
-
-      const { data, error: fetchError } = await supabase
-        .from('email_accounts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (mountedRef.current) {
-        if (fetchError) {
-          setError(fetchError.message)
-        } else {
-          setAccounts(data ?? [])
-        }
-        setLoading(false)
-      }
-    } catch (err) {
-      if (mountedRef.current) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch accounts')
-        setLoading(false)
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    mountedRef.current = true
-    fetchAccounts()
-    return () => { mountedRef.current = false }
-  }, [fetchAccounts])
-
-  const deleteAccount = useCallback(async (accountId: string) => {
+  const deleteAccount = async (accountId: string): Promise<{ ok: boolean; error?: string }> => {
     const { error: deleteError } = await supabase
       .from('email_accounts')
       .delete()
       .eq('id', accountId)
 
     if (deleteError) {
-      setError(deleteError.message)
-      return false
+      return { ok: false, error: deleteError.message }
     }
-    setAccounts((prev) => prev.filter((a) => a.id !== accountId))
-    return true
-  }, [])
+    mutate()
+    return { ok: true }
+  }
 
-  return { accounts, loading, error, refetch: fetchAccounts, deleteAccount }
+  return {
+    accounts: data ?? [],
+    loading: isLoading,
+    error: error?.message ?? null,
+    refetch: mutate,
+    deleteAccount,
+  }
 }

@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
-import { Alert, Button, Card, Col, Form, Row, Stack } from 'react-bootstrap'
+import { useState } from 'react'
+import { Alert, Button, Card, Col, Form, Row } from 'react-bootstrap'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { addRecipients } from '../store/recipientsSlice'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { FileDropzone } from '../components/FileDropzone'
+import { EmailPreview } from '../components/EmailPreview'
 import { useEmailAccounts } from '../hooks/useEmailAccounts'
 import { useToast } from '../hooks/useToast'
 import { supabase } from '../lib/supabase'
@@ -32,21 +33,6 @@ export function Compose() {
   const [error, setError] = useState<string | null>(null)
 
   const previewRecipient = importedRecipients[previewIndex] ?? null
-
-  function escapeHtml(str: string): string {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-  }
-
-  const previewHtml = useMemo(() => {
-    return body.replace(/\{\{\s*(\w+)\s*\}\}/g, (_match, key) => {
-      if (!previewRecipient) return `{{${key}}}`
-      const val = key === 'email' ? previewRecipient.email
-        : key === 'name' ? (previewRecipient.name ?? '')
-        : key === 'company' ? (previewRecipient.company ?? '')
-        : previewRecipient.variables?.[key] ?? ''
-      return escapeHtml(val)
-    })
-  }, [body, previewRecipient])
 
   const handleUpload = (parsed: ImportedRecipient[]) => {
     dispatch(addRecipients(parsed))
@@ -348,40 +334,13 @@ export function Compose() {
                     )}
                   </div>
 
-                  {previewRecipient ? (
-                    <div className="d-flex flex-column flex-grow-1">
-                      <div className="d-flex align-items-center gap-2 mb-3">
-                        <i className="bi bi-person-fill text-muted small"></i>
-                        <span className="small text-muted">Previewing for</span>
-                        <strong className="small text-dark">{previewRecipient.email}</strong>
-                      </div>
-                      <div className="preview-frame flex-grow-1">
-                        <div className="preview-header">
-                          <p className="text-muted small mb-0">Subject</p>
-                          <p className="fw-semibold mb-0 text-dark" style={{ fontSize: '0.95rem' }}>
-                            {subject.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, key) => {
-                              if (key === 'email') return previewRecipient.email
-                              if (key === 'name') return previewRecipient.name ?? ''
-                              if (key === 'company') return previewRecipient.company ?? ''
-                              return previewRecipient.variables?.[key] ?? ''
-                            }) || '(no subject)'}
-                          </p>
-                        </div>
-                        <div className="preview-body flex-grow-1">
-                          <div className="email-preview" dangerouslySetInnerHTML={{ __html: previewHtml }} />
-                        </div>
-                      </div>
-
-                      <div className="mt-4">
-                        <h6 className="text-muted small text-uppercase fw-bold mb-2" style={{ letterSpacing: '0.06em' }}>Available variables</h6>
-                        <Stack direction="horizontal" gap={2} className="flex-wrap">
-                          <span className="var-chip">{'{{email}}'}</span>
-                          <span className="var-chip">{'{{name}}'}</span>
-                          <span className="var-chip">{'{{company}}'}</span>
-                        </Stack>
-                      </div>
-                    </div>
-                  ) : (
+{previewRecipient ? (
+                      <EmailPreview
+                        subject={subject}
+                        body={body}
+                        recipient={previewRecipient}
+                      />
+                    ) : (
                     <div className="empty-state flex-grow-1 d-flex align-items-center justify-content-center">
                       <div>
                         <div className="empty-state-icon">

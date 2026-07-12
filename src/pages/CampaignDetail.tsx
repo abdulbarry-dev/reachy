@@ -34,7 +34,7 @@ function getEdgeFunctionUrl(name: string): string {
 export function CampaignDetail() {
   const { campaignId } = useParams<{ campaignId: string }>()
   const navigate = useNavigate()
-  const { campaigns, loading: campaignsLoading } = useCampaigns()
+  const { campaigns, loading: campaignsLoading, refetch: refetchCampaigns } = useCampaigns()
   const { recipients, loading: recipientsLoading, error, refetch } = useRecipients(campaignId)
   const { toast } = useToast()
   const [starting, setStarting] = useState(false)
@@ -65,6 +65,7 @@ export function CampaignDetail() {
 
       toast('Campaign started successfully', 'success')
       refetch()
+      refetchCampaigns()
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to start campaign', 'error')
     } finally {
