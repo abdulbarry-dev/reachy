@@ -96,10 +96,18 @@ const authSlice = createSlice({
         state.loading = false
         state.error = action.error.message ?? 'Sign in failed'
       })
+      .addCase(signOut.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
       .addCase(signOut.fulfilled, (state) => {
         state.user = null
         state.session = null
         state.loading = false
+      })
+      .addCase(signOut.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.error.message ?? 'Sign out failed'
       })
       .addCase(resetPassword.fulfilled, (state) => {
         state.loading = false

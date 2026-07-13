@@ -10,10 +10,9 @@ import { useEmailAccounts } from '../hooks/useEmailAccounts'
 import { useToast } from '../hooks/useToast'
 import { supabase } from '../lib/supabase'
 import { Skeleton } from '../components/Skeleton'
+import { getEdgeFunctionUrl } from '../lib/edge-functions'
 import type { RootState, AppDispatch } from '../store'
 import type { ImportedRecipient } from '../types'
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.replace(/\/+$/, '') ?? ''
 
 export function Compose() {
   const dispatch = useDispatch<AppDispatch>()
@@ -68,7 +67,7 @@ export function Compose() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('Not authenticated')
 
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-campaign`, {
+      const res = await fetch(getEdgeFunctionUrl('create-campaign'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

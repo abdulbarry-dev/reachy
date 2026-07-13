@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../hooks/useToast'
 import { SkeletonTable } from '../components/Skeleton'
+import { getEdgeFunctionUrl } from '../lib/edge-functions'
 
 
 const statusBadgeClass: Record<string, string> = {
@@ -22,13 +23,6 @@ const recipientBadgeClass: Record<string, string> = {
   sending: 'badge-reachy-running',
   sent: 'badge-reachy-completed',
   failed: 'badge-reachy-failed',
-}
-
-const STATUS_BASE_URL = import.meta.env.VITE_SUPABASE_URL
-
-function getEdgeFunctionUrl(name: string): string {
-  const base = STATUS_BASE_URL.replace(/\/+$/, '')
-  return `${base}/functions/v1/${name}`
 }
 
 export function CampaignDetail() {

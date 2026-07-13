@@ -6,14 +6,8 @@ import { useToast } from '../hooks/useToast'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { supabase } from '../lib/supabase'
 import { Skeleton } from '../components/Skeleton'
+import { getEdgeFunctionUrl } from '../lib/edge-functions'
 import type { EmailAccount } from '../types'
-
-const STATUS_BASE_URL = import.meta.env.VITE_SUPABASE_URL
-
-function getEdgeFunctionUrl(name: string): string {
-  const base = STATUS_BASE_URL.replace(/\/+$/, '')
-  return `${base}/functions/v1/${name}`
-}
 
 function AccountRow({ acc, onDelete }: { acc: EmailAccount; onDelete: (id: string) => void }) {
   const initials = acc.from_name

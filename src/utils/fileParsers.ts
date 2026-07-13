@@ -125,8 +125,8 @@ function normalizeString(value: unknown): string | undefined {
 function extractVariables(record: Record<string, unknown>): Record<string, string> | undefined {
   const vars: Record<string, string> = {}
   for (const [key, value] of Object.entries(record)) {
-    const normalized = key.trim()
-    if (['email', 'name', 'company'].includes(normalized.toLowerCase())) continue
+    const normalized = key.trim().toLowerCase()
+    if (['email', 'name', 'company'].includes(normalized)) continue
     if (value != null) {
       vars[normalized] = String(value).trim()
     }

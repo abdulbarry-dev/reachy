@@ -49,3 +49,5 @@ export interface ImportedRecipient {
   company?: string
   variables?: Record<string, string>
 }
+
+export type { User, Session } from '@supabase/supabase-js'
