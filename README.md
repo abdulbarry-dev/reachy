@@ -6,7 +6,12 @@
   <p>
     Secure Gmail SMTP · pg_cron cadenced dispatch · Vault-encrypted secrets
   </p>
-  <br />
+  <p>
+    <a href="https://github.com/abdulbarry-dev/reachy/actions/workflows/deploy.yml">
+      <img src="https://github.com/abdulbarry-dev/reachy/actions/workflows/deploy.yml/badge.svg" alt="Deploy" />
+    </a>
+    <img src="https://img.shields.io/badge/vercel-deployed-brightgreen?logo=vercel" alt="Vercel" />
+  </p>
   <p>
     <a href="https://reachy-cold-email.vercel.app/">reachy-cold-email.vercel.app</a>
   </p>
@@ -124,6 +129,34 @@ VITE_SUPABASE_ANON_KEY=  # Your Supabase anon / publishable key
 
 Edge Function secrets (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) are set in the Supabase Dashboard, **not** in `.env`.
 
+### Enable the Dispatch Cron Job
+
+After applying the database migrations and deploying the `dispatch-sends` Edge Function, schedule the cron job in the **Supabase Dashboard SQL Editor**:
+
+```sql
+select cron.schedule(
+  'dispatch-sends-every-60s',
+  '* * * * *',
+  $$
+    select net.http_post(
+      url := 'https://<YOUR_PROJECT_REF>.supabase.co/functions/v1/dispatch-sends',
+      body := '{}'::jsonb,
+      headers := jsonb_build_object(
+        'Authorization', 'Bearer <YOUR_ANON_KEY>',
+        'Content-Type', 'application/json',
+        'x-cron-secret', '<YOUR_CRON_SECRET>'
+      )
+    )
+  $$
+);
+```
+
+1. Replace `<YOUR_PROJECT_REF>` with your Supabase project reference.
+2. Replace `<YOUR_ANON_KEY>` with your Supabase anon key.
+3. Generate a strong `CRON_SECRET` (e.g., `openssl rand -hex 32`) and add it as an Edge Function secret named `CRON_SECRET` in **Supabase Dashboard → Edge Functions → Secrets**.
+
+The cron job runs every 60 seconds, invoking `dispatch-sends` to process one pending recipient per tick.
+
 ### Scripts
 
 | Command | Description |
@@ -159,6 +192,13 @@ This keeps each invocation lightweight and avoids timeouts.
 - Gmail app passwords are stored in **Supabase Vault** (`vault.create_secret()`), never in plaintext columns.
 - Row-Level Security (RLS) ensures users only see their own data.
 - `Authorization: Bearer <token>` is passed from client to Edge Functions.
+- `dispatch-sends` requires a `x-cron-secret` header matching the `CRON_SECRET` Edge Function secret.
+
+### Monitoring
+
+- **Vercel Analytics** is enabled for Core Web Vitals and real-user performance metrics.
+- **Edge Function Health Check** — `GET /functions/v1/dispatch-sends` returns `{"status":"ok"}` for uptime monitoring tools.
+- **Supabase Logs** — review `dispatch-sends` invocations and errors in **Supabase Dashboard → Edge Functions → Logs**.
 
 ## Contributing
 

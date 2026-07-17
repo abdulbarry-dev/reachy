@@ -251,10 +251,10 @@ export function Compose() {
                               type="number"
                               inputMode="numeric"
                               min={1}
-                              max={500}
+                              max={90}
                               className="form-control-reachy"
                               value={dailyCap}
-                              onChange={(e) => setDailyCap(Math.max(1, Math.min(500, Number(e.target.value))))}
+                              onChange={(e) => setDailyCap(Math.max(1, Math.min(90, Number(e.target.value))))}
                             />
                           </div>
                         </Col>

@@ -29,7 +29,11 @@ function jsonResponse(body: unknown, status = 200) {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: { ...corsHeaders, 'Access-Control-Allow-Methods': 'POST, OPTIONS' } })
+    return new Response('ok', { headers: { ...corsHeaders, 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' } })
+  }
+
+  if (req.method === 'GET') {
+    return jsonResponse({ status: 'ok', function: 'dispatch-sends', timestamp: new Date().toISOString() })
   }
 
   const cronAuth = req.headers.get('x-cron-secret')

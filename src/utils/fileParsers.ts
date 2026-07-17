@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import * as XLSX from 'xlsx'
+import { readSheet } from 'read-excel-file/browser'
 import type { ImportedRecipient } from '../types'
 
 function isEmail(value: unknown): string | null {
@@ -44,23 +44,13 @@ export function parseCsvFile(file: File): Promise<ImportedRecipient[]> {
   })
 }
 
-export function parseExcelFile(file: File): Promise<ImportedRecipient[]> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      try {
-        const data = new Uint8Array(reader.result as ArrayBuffer)
-        const workbook = XLSX.read(data, { type: 'array' })
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-        const rows = XLSX.utils.sheet_to_json<unknown[]>(firstSheet, { header: 1 }) as unknown[][]
-        resolve(normalizeSheetRows(rows))
-      } catch {
-        reject(new Error('Invalid Excel file'))
-      }
-    }
-    reader.onerror = () => reject(new Error('Could not read file'))
-    reader.readAsArrayBuffer(file)
-  })
+export async function parseExcelFile(file: File): Promise<ImportedRecipient[]> {
+  try {
+    const rows = await readSheet(file)
+    return normalizeSheetRows(rows as unknown[][])
+  } catch {
+    throw new Error('Invalid Excel file')
+  }
 }
 
 function normalizeRows(rows: unknown[]): ImportedRecipient[] {
