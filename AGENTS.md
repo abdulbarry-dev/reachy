@@ -7,6 +7,9 @@ npm run dev       # Vite dev server
 npm run build     # tsc -b && vite build (typecheck required before build)
 npm run lint      # oxlint (not ESLint — uses .oxlintrc.json)
 npm run preview   # vite preview
+npm run test      # vitest (watch mode)
+npm run test:run  # vitest run (CI-friendly)
+npm run coverage  # vitest run --coverage
 npx tsc --noEmit  # typecheck only (skip build)
 ```
 

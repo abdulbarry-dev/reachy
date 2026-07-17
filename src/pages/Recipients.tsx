@@ -8,6 +8,7 @@ import { FileDropzone } from '../components/FileDropzone'
 import { RecipientRow } from '../components/RecipientRow'
 import { useToast } from '../hooks/useToast'
 import { recipientsToCsv } from '../utils/fileParsers'
+import { generateTemplate } from '../utils/templateGenerator'
 import type { RootState, AppDispatch } from '../store'
 import type { ImportedRecipient } from '../types'
 
@@ -38,6 +39,7 @@ export function Recipients() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [bulkDelete, setBulkDelete] = useState(false)
   const [clearAll, setClearAll] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   const editingRecipient = editTarget ? recipients.find((r) => r.email.toLowerCase() === editTarget.toLowerCase()) : undefined
   const deletingRecipient = deleteTarget ? recipients.find((r) => r.email.toLowerCase() === deleteTarget.toLowerCase()) : undefined
@@ -125,6 +127,24 @@ export function Recipients() {
   const exportSingleCsv = useCallback((i: number) =>
     download(`recipient-${recipients[i].email}.csv`, recipientsToCsv([recipients[i]]), 'text/csv'), [recipients])
 
+  const handleDownloadTemplate = useCallback(async (format: 'csv' | 'xlsx') => {
+    setDownloading(true)
+    try {
+      const blob = await generateTemplate(recipients, format)
+      const filename = `recipients-template.${format}`
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast('Failed to generate template. Please try again.', 'error')
+    } finally {
+      setDownloading(false)
+    }
+  }, [recipients, toast])
+
   return (
     <AnimatedPage>
       {/* Page header */}
@@ -166,6 +186,31 @@ export function Recipients() {
                     </div>
                   </div>
                   <FileDropzone onUpload={handleUpload} />
+                  <div className="d-flex align-items-center gap-2 mt-3 pt-2 border-top">
+                    <span className="small text-muted me-1">Need a template?</span>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-1"
+                      onClick={() => handleDownloadTemplate('csv')}
+                      disabled={downloading}
+                    >
+                      <i className="bi bi-filetype-csv"></i>
+                      CSV
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-1"
+                      onClick={() => handleDownloadTemplate('xlsx')}
+                      disabled={downloading}
+                    >
+                      {downloading ? (
+                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                      ) : (
+                        <i className="bi bi-file-earmark-excel"></i>
+                      )}
+                      Excel
+                    </button>
+                  </div>
                 </Card.Body>
               </Card>
             </div>

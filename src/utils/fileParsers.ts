@@ -2,7 +2,7 @@ import Papa from 'papaparse'
 import { readSheet } from 'read-excel-file/browser'
 import type { ImportedRecipient } from '../types'
 
-function isEmail(value: unknown): string | null {
+export function isEmail(value: unknown): string | null {
   if (value == null) return null
   const s = String(value).trim()
   if (!s) return null
@@ -10,7 +10,7 @@ function isEmail(value: unknown): string | null {
   return re.test(s) ? s.toLowerCase() : null
 }
 
-function looksLikeHeaderRow(row: unknown[]): boolean {
+export function looksLikeHeaderRow(row: unknown[]): boolean {
   if (!Array.isArray(row) || row.length === 0) return false
   const first = String(row[0]).trim().toLowerCase()
   return first.includes('email') || first.includes('name') || first.includes('company')
@@ -53,7 +53,7 @@ export async function parseExcelFile(file: File): Promise<ImportedRecipient[]> {
   }
 }
 
-function normalizeRows(rows: unknown[]): ImportedRecipient[] {
+export function normalizeRows(rows: unknown[]): ImportedRecipient[] {
   const recipients: ImportedRecipient[] = []
 
   for (const row of rows) {
@@ -80,7 +80,7 @@ function normalizeRows(rows: unknown[]): ImportedRecipient[] {
   return recipients
 }
 
-function normalizeSheetRows(rows: unknown[][]): ImportedRecipient[] {
+export function normalizeSheetRows(rows: unknown[][]): ImportedRecipient[] {
   if (rows.length === 0) return []
 
   const hasHeader = looksLikeHeaderRow(rows[0])
@@ -106,13 +106,13 @@ function normalizeSheetRows(rows: unknown[][]): ImportedRecipient[] {
     }))
 }
 
-function normalizeString(value: unknown): string | undefined {
+export function normalizeString(value: unknown): string | undefined {
   if (value == null) return undefined
   const s = String(value).trim()
   return s || undefined
 }
 
-function extractVariables(record: Record<string, unknown>): Record<string, string> | undefined {
+export function extractVariables(record: Record<string, unknown>): Record<string, string> | undefined {
   const vars: Record<string, string> = {}
   for (const [key, value] of Object.entries(record)) {
     const normalized = key.trim().toLowerCase()
