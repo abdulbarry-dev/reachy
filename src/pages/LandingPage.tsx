@@ -182,6 +182,18 @@ export function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // ── Lock body scroll on mobile menu ──
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [mobileOpen])
+
   // ── Active section via IntersectionObserver ──
   useEffect(() => {
     const sectionIds = ['features', 'workflow', 'playground', 'deliverability']
