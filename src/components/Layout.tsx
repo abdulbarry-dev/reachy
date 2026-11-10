@@ -230,7 +230,7 @@ export function Layout() {
             <Stack direction="horizontal" gap={3} className="justify-content-center text-muted small">
               <i className="bi bi-shield-check" />
               <span>Reachy — Cold-email automation</span>
-              <span className="text-border" style={{ width: 1, height: 14, background: 'var(--reachy-border-color)' }} />
+              <span className="footer-divider" aria-hidden="true" />
               <a href="https://github.com/abdulbarry-dev/reachy" target="_blank" rel="noopener noreferrer" className="text-decoration-none text-muted" aria-label="GitHub">
                 <i className="bi bi-github" aria-hidden="true"></i>
               </a>

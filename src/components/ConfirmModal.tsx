@@ -27,20 +27,11 @@ export function ConfirmModal({
     <Modal show={show} onHide={onCancel} centered backdrop="static">
       <Modal.Body className="text-center py-4">
         <div
-          className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-          style={{
-            width: 64,
-            height: 64,
-            background: confirmVariant === 'danger' ? 'rgba(239,68,68,0.1)' : 'rgba(58,179,151,0.1)',
-          }}
+          className={`confirm-modal-icon d-inline-flex align-items-center justify-content-center rounded-circle mb-3 ${
+            confirmVariant === 'danger' ? 'confirm-modal-icon-danger' : 'confirm-modal-icon-primary'
+          }`}
         >
-          <i
-            className={`bi ${icon}`}
-            style={{
-              fontSize: '1.6rem',
-              color: confirmVariant === 'danger' ? '#ef4444' : 'var(--reachy-primary)',
-            }}
-          />
+          <i className={`bi ${icon} confirm-modal-icon-glyph`} />
         </div>
         <h5 className="fw-bold mb-2">{title}</h5>
         <p className="text-muted small mb-0">{message}</p>

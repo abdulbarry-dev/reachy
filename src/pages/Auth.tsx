@@ -44,13 +44,15 @@ interface AuthInputProps {
 }
 
 function AuthInput({ label, icon, type, placeholder, value, onChange, minLength, required, autoComplete }: AuthInputProps) {
+  // Slug the label so ids are valid (no spaces/uppercase) and label/for still pair.
+  const inputId = `auth-${label.toLowerCase().replace(/\s+/g, '-')}`
   return (
     <div className="auth-input-wrap">
-      <Form.Label htmlFor={label}>{label}</Form.Label>
+      <Form.Label htmlFor={inputId}>{label}</Form.Label>
       <div className="auth-input-inner">
         <i className={`bi ${icon} auth-input-icon`} />
         <Form.Control
-          id={label}
+          id={inputId}
           type={type}
           placeholder={placeholder}
           value={value}

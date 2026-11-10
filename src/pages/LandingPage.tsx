@@ -1,60 +1,26 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Container, Row, Col, Button, Form } from 'react-bootstrap'
 import { useNavigate, Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { motion, AnimatePresence, useSpring, useTransform, type Variants } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import type { RootState } from '../store'
+import { HeroSection } from './landing/HeroSection'
+import { StarfieldCanvas } from './landing/StarfieldCanvas'
+import { LandingNav } from './landing/LandingNav'
+import { LogoSvg } from './landing/LogoSvg'
+import { LANDING_SECTIONS } from './landing/sections'
+import {
+  EASE_OUT_EXPO,
+  TRANSITION_BASE,
+  fadeInUp,
+  fadeInLeft,
+  fadeInRight,
+  staggerContainer,
+  staggerFast,
+  cardHoverEffect,
+  highlightedCardHover
+} from './landing/landingMotion'
 import './LandingPage.css'
-
-// ─── Easing & Motion Presets ────────────────────────────────────────────────
-
-const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const
-const TRANSITION_BASE = { duration: 0.75, ease: EASE_OUT_EXPO }
-
-const fadeInUp: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: TRANSITION_BASE }
-}
-
-const fadeInLeft: Variants = {
-  hidden: { opacity: 0, x: -40 },
-  visible: { opacity: 1, x: 0, transition: TRANSITION_BASE }
-}
-
-const fadeInRight: Variants = {
-  hidden: { opacity: 0, x: 40 },
-  visible: { opacity: 1, x: 0, transition: TRANSITION_BASE }
-}
-
-const scaleIn: Variants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: { opacity: 1, scale: 1, transition: TRANSITION_BASE }
-}
-
-const staggerContainer: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } }
-}
-
-const staggerFast: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.07, delayChildren: 0.0 } }
-}
-
-const cardHoverEffect = {
-  y: -8,
-  scale: 1.015,
-  boxShadow: 'var(--lp-card-hover-shadow, 0 24px 48px rgba(58, 179, 151, 0.12))',
-  borderColor: 'var(--lp-card-hover-border, rgba(58, 179, 151, 0.25))',
-  transition: { duration: 0.4, ease: EASE_OUT_EXPO }
-}
-
-const highlightedCardHover = {
-  y: -8,
-  scale: 1.015,
-  boxShadow: 'var(--lp-card-hover-highlight-shadow, 0 28px 56px rgba(58, 179, 151, 0.32))',
-  transition: { duration: 0.4, ease: EASE_OUT_EXPO }
-}
 
 // ─── Static Data ─────────────────────────────────────────────────────────────
 
@@ -71,86 +37,15 @@ const MOCK_RECIPIENTS: MockRecipient[] = [
   { first_name: 'Marcus', company: 'Figma', product: 'Design Tools', email: 'marcus@figma.com' }
 ]
 
-const MOCK_DISPATCH_LOGS = [
-  { email: 'john@stripe.com', status: 'Queued', time: 'Just now' },
-  { email: 'clara@vercel.com', status: 'Sent', time: '1m ago' },
-  { email: 'marcus@figma.com', status: 'Sent', time: '2m ago' },
-  { email: 'sarah@airbnb.com', status: 'Sent', time: '3m ago' }
-]
-
-// ─── Animated Counter Hook ───────────────────────────────────────────────────
-
-function useCounter(target: number, duration = 1400, started = false) {
-  const [value, setValue] = useState(0)
-  useEffect(() => {
-    if (!started) return
-    let startTime: number | null = null
-    let raf: number
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp
-      const progress = Math.min((timestamp - startTime) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setValue(Math.floor(eased * target))
-      if (progress < 1) raf = requestAnimationFrame(step)
-    }
-    raf = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(raf)
-  }, [target, duration, started])
-  return value
-}
-
-// ─── Tilt Hook (cursor tracking) ─────────────────────────────────────────────
-
-function useTilt() {
-  const ref = useRef<HTMLDivElement>(null)
-  const mouseX = useSpring(0, { stiffness: 200, damping: 30 })
-  const mouseY = useSpring(0, { stiffness: 200, damping: 30 })
-
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], ['8deg', '-8deg'])
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], ['-8deg', '8deg'])
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    const el = ref.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const x = (e.clientX - rect.left) / rect.width - 0.5
-    const y = (e.clientY - rect.top) / rect.height - 0.5
-    mouseX.set(x)
-    mouseY.set(y)
-  }, [mouseX, mouseY])
-
-  const handleMouseLeave = useCallback(() => {
-    mouseX.set(0)
-    mouseY.set(0)
-  }, [mouseX, mouseY])
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    el.addEventListener('mousemove', handleMouseMove)
-    el.addEventListener('mouseleave', handleMouseLeave)
-    return () => {
-      el.removeEventListener('mousemove', handleMouseMove)
-      el.removeEventListener('mouseleave', handleMouseLeave)
-    }
-  }, [handleMouseMove, handleMouseLeave])
-
-  return { ref, rotateX, rotateY }
-}
-
-// ─── Logo — uses the same SVG from public/logo.svg ────────────────────────────
-const LogoSvg = ({ className }: { className?: string }) => (
-  <img src="/logo.svg" alt="Reachy" className={className ?? 'lp-logo-svg'} />
-)
+/** Read once at module scope: the footer must not call an impure getter per render. */
+const COPYRIGHT_YEAR = new Date().getFullYear()
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function LandingPage() {
   const navigate = useNavigate()
   const { user } = useSelector((state: RootState) => state.auth)
-  const [scrolled, setScrolled] = useState(false)
   const [activeSection, setActiveSection] = useState('')
-  const [mobileOpen, setMobileOpen] = useState(false)
 
   // Interactive template playground
   const [templateText, setTemplateText] = useState(
@@ -162,44 +57,11 @@ export function LandingPage() {
   // Safety slider
   const [dailySends, setDailySends] = useState(90)
 
-  // Dispatch log rotation
-  const [dispatchLogIdx, setDispatchLogIdx] = useState(0)
-
-  // Hero mockup counter (triggered when hero is visible)
-  const [heroVisible, setHeroVisible] = useState(false)
-  const heroRef = useRef<HTMLDivElement>(null)
-  const countSent = useCounter(142, 1200, heroVisible)
-  const countReply = useCounter(246, 1400, heroVisible) // stored as int, displayed as /10 = 24.6%
-  const countInbox = useCounter(992, 1600, heroVisible) // /10 = 99.2%
-
-  // Tilt effect for hero mockup
-  const { ref: tiltRef, rotateX, rotateY } = useTilt()
-
-  // ── Scroll listener ──
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // ── Lock body scroll on mobile menu ──
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'unset'
-    }
-    return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [mobileOpen])
-
   // ── Active section via IntersectionObserver ──
   useEffect(() => {
-    const sectionIds = ['features', 'workflow', 'playground', 'deliverability']
     const observers: IntersectionObserver[] = []
 
-    sectionIds.forEach((id) => {
+    LANDING_SECTIONS.forEach(({ id }) => {
       const el = document.getElementById(id)
       if (!el) return
       const obs = new IntersectionObserver(
@@ -211,25 +73,6 @@ export function LandingPage() {
     })
 
     return () => observers.forEach((o) => o.disconnect())
-  }, [])
-
-  // ── Hero visibility (for counters) ──
-  useEffect(() => {
-    const el = heroRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) setHeroVisible(true)
-    }, { threshold: 0.4 })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
-
-  // ── Dispatch log rotation ──
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDispatchLogIdx((prev) => (prev + 1) % MOCK_DISPATCH_LOGS.length)
-    }, 4000)
-    return () => clearInterval(interval)
   }, [])
 
   // ── Insert variable at cursor ──
@@ -286,258 +129,10 @@ export function LandingPage() {
       <div className="lp-blob lp-blob-3" />
 
       {/* ── Navbar ── */}
-      <motion.nav
-        className={`lp-navbar fixed-top ${scrolled ? 'scrolled' : ''}`}
-        initial={{ opacity: 0, y: -14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
-      >
-        <Container>
-          <div className="lp-navbar-inner">
-            <a href="#" className="lp-brand">
-              <LogoSvg />
-              <span>Reachy</span>
-            </a>
-
-            {/* Desktop nav links — hidden on mobile */}
-            <div className="lp-nav-desktop">
-              {(['features', 'workflow', 'playground', 'deliverability'] as const).map((id) => (
-                <a
-                  key={id}
-                  href={`#${id}`}
-                  className={`lp-nav-link ${activeSection === id ? 'active' : ''}`}
-                >
-                  {id === 'features' ? 'Features' : id === 'workflow' ? 'How it Works' : id === 'playground' ? 'Playground' : 'Deliverability'}
-                </a>
-              ))}
-            </div>
-
-            {/* Desktop auth buttons */}
-            <div className="lp-nav-desktop-actions">
-              {user ? (
-                <Button className="btn-lp-nav-cta" onClick={() => navigate('/dashboard')}>
-                  Go to Dashboard <i className="bi bi-arrow-right ms-1" />
-                </Button>
-              ) : (
-                <>
-                  <Link to="/login" className="lp-nav-link text-decoration-none" style={{ margin: 0 }}>Log In</Link>
-                  <Link to="/signup" className="btn-lp-nav-cta text-decoration-none">Get Started</Link>
-                </>
-              )}
-            </div>
-
-            {/* Mobile hamburger */}
-            <button
-              className="lp-mobile-menu-btn d-lg-none"
-              type="button"
-              onClick={() => setMobileOpen(true)}
-              aria-label="Open menu"
-            >
-              <i className="bi bi-list" />
-            </button>
-          </div>
-        </Container>
-      </motion.nav>
-
-      {/* ── Mobile Sidebar ── */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              className="lp-sidebar-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setMobileOpen(false)}
-            />
-            <motion.aside
-              className="lp-sidebar"
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <div className="lp-sidebar-header">
-                <div className="lp-sidebar-brand">
-                  <LogoSvg />
-                  <span>Reachy</span>
-                </div>
-                <button
-                  className="lp-sidebar-close"
-                  onClick={() => setMobileOpen(false)}
-                  aria-label="Close menu"
-                >
-                  <i className="bi bi-x-lg" />
-                </button>
-              </div>
-
-              <nav className="lp-sidebar-nav">
-                {(['features', 'workflow', 'playground', 'deliverability'] as const).map((id) => (
-                  <a
-                    key={id}
-                    href={`#${id}`}
-                    className={`lp-sidebar-link ${activeSection === id ? 'active' : ''}`}
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {id === 'features' ? 'Features' : id === 'workflow' ? 'How it Works' : id === 'playground' ? 'Playground' : 'Deliverability'}
-                  </a>
-                ))}
-              </nav>
-
-<div className="lp-sidebar-footer">
-                {user ? (
-                  <Button className="btn-lp-nav-cta w-100" onClick={() => { setMobileOpen(false); navigate('/dashboard'); }}>
-                    Go to Dashboard <i className="bi bi-arrow-right ms-1" />
-                  </Button>
-                ) : (
-                  <>
-                    <Link to="/login" className="lp-sidebar-auth-btn" onClick={() => setMobileOpen(false)}>Log In</Link>
-                    <Link to="/signup" className="lp-sidebar-auth-btn lp-sidebar-auth-btn-primary" onClick={() => setMobileOpen(false)}>Get Started</Link>
-                  </>
-                )}
-              </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+      <LandingNav user={!!user} activeSection={activeSection} />
 
       {/* ── Hero Section ── */}
-      <section id="main-landing-content" className="lp-section pt-5 pb-5">
-        <Container className="pt-5 mt-4">
-          <div className="hero-container-card" ref={heroRef}>
-            {/* Animated glow ring behind the card */}
-            <div className="hero-glow-ring" />
-
-            <Row className="align-items-center">
-              {/* Vertical step indicators */}
-              <Col lg={2} className="d-none d-lg-block">
-                <motion.div
-                  className="hero-steps-indicator"
-                  initial="hidden"
-                  animate="visible"
-                  variants={staggerContainer}
-                >
-                  {[
-                    { num: 'STEP 01', name: 'Connect SMTP', active: true },
-                    { num: 'STEP 02', name: 'Personalize', active: false },
-                    { num: 'STEP 03', name: 'Schedule Net', active: false }
-                  ].map((step) => (
-                    <motion.div key={step.num} className={`hero-step-item ${step.active ? 'active' : ''}`} variants={fadeInUp}>
-                      <div className="hero-step-num">{step.num}</div>
-                      <div className="hero-step-name">{step.name}</div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </Col>
-
-              {/* Hero copy */}
-              <Col lg={6} md={12} className="pe-lg-4 text-center text-lg-start">
-                <motion.div initial="hidden" animate="visible" variants={staggerContainer}>
-                  <motion.span className="lp-badge mb-3" variants={fadeInUp}>
-                    <i className="bi bi-rocket-takeoff-fill text-gradient" /> Deliverability First
-                  </motion.span>
-                  <motion.h1 className="hero-title mb-4" variants={fadeInUp}>
-                    Reach Prospects' <span className="text-gradient">Inbox</span>, Not the Spam Folder.
-                  </motion.h1>
-                  <motion.p className="lead text-muted mb-4 pb-2" style={{ fontSize: '1.15rem' }} variants={fadeInUp}>
-                    Supercharge your cold outreach with automated sending delays, safe daily caps, and encrypted app password management. Built securely on Supabase.
-                  </motion.p>
-                  <motion.div className="d-flex flex-wrap justify-content-center justify-content-lg-start align-items-center gap-3" variants={fadeInUp}>
-                    <Button className="btn-lp-primary" onClick={() => navigate('/signup')}>
-                      Start Free Campaign
-                    </Button>
-                    <a href="#playground" className="btn-lp-outline text-decoration-none">
-                      Try Personalization Tool
-                    </a>
-                  </motion.div>
-                </motion.div>
-              </Col>
-
-              {/* Hero Mockup with tilt */}
-              <Col lg={4} className="mt-5 mt-lg-0">
-                <motion.div
-                  className="hero-mockup-wrapper"
-                  ref={tiltRef as React.RefObject<HTMLDivElement>}
-                  style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 800 }}
-                  initial="hidden"
-                  animate="visible"
-                  variants={scaleIn}
-                >
-                  <div className="bg-white border rounded-4 shadow p-4 border-light position-relative">
-                    <div className="d-flex align-items-center justify-content-between border-bottom pb-3 mb-3">
-                      <div className="d-flex align-items-center gap-2">
-                        <span className="d-block bg-primary rounded-circle" style={{ width: 10, height: 10 }} />
-                        <h6 className="mb-0 fw-bold" style={{ fontSize: '0.9rem' }}>Campaign Dispatcher</h6>
-                      </div>
-                      <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Active</span>
-                    </div>
-
-                    {/* Animated stat counters */}
-                    <div className="row g-2 text-center mb-3">
-                      <div className="col-4">
-                        <div className="bg-light p-2 rounded border border-light-subtle">
-                          <div className="text-muted small">Sent</div>
-                          <strong className="text-dark">{countSent}</strong>
-                        </div>
-                      </div>
-                      <div className="col-4">
-                        <div className="bg-light p-2 rounded border border-light-subtle">
-                          <div className="text-muted small">Replies</div>
-                          <strong className="text-success">{(countReply / 10).toFixed(1)}%</strong>
-                        </div>
-                      </div>
-                      <div className="col-4">
-                        <div className="bg-light p-2 rounded border border-light-subtle">
-                          <div className="text-muted small">Inbox Pl.</div>
-                          <strong className="text-gradient">{(countInbox / 10).toFixed(1)}%</strong>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Live dispatch log */}
-                    <div className="bg-dark text-white rounded p-3 font-monospace" style={{ fontSize: '0.8rem', minHeight: 110 }}>
-                      <div className="text-secondary border-bottom border-secondary pb-1 mb-2 d-flex justify-content-between">
-                        <span>LIVE DISPATCH STATUS</span>
-                        <span className="spinner-border spinner-border-sm text-success" role="status" />
-                      </div>
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={dispatchLogIdx}
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -6 }}
-                          transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
-                        >
-                          <div className="text-success">✉️ Sent matching template!</div>
-                          <div className="text-light">To: {MOCK_DISPATCH_LOGS[dispatchLogIdx].email}</div>
-                          <div className="text-warning">Status: {MOCK_DISPATCH_LOGS[dispatchLogIdx].status}</div>
-                          <div className="text-secondary small font-monospace">Throttler delay: 60 seconds</div>
-                        </motion.div>
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Floating security badge */}
-                    <motion.div
-                      className="hero-floating-banner"
-                      animate={{ y: [0, -8, 0] }}
-                      transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
-                    >
-                      <div className="floating-banner-icon">
-                        <i className="bi bi-shield-check" />
-                      </div>
-                      <div>
-                        <div className="fw-bold small">Zero Plaintext Storage</div>
-                        <div className="text-muted small" style={{ fontSize: '0.75rem' }}>SMTP Passwords encrypted in Supabase Vault</div>
-                      </div>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              </Col>
-            </Row>
-          </div>
-        </Container>
-      </section>
+      <HeroSection />
 
       {/* ── Integration Logos ── */}
       <section className="py-4">
@@ -626,6 +221,15 @@ export function LandingPage() {
                     }
                   </h4>
                   <p className="text-muted mb-0">{card.desc}</p>
+                  {card.code && (
+                    <div className="dispatch-diagram" aria-hidden="true">
+                      <span className="dd-node"><i className="bi bi-database" /></span>
+                      <span className="dd-wire"><span className="dd-pulse" /></span>
+                      <span className="dd-tick">tick / 60s</span>
+                      <span className="dd-wire dd-wire-late"><span className="dd-pulse" /></span>
+                      <span className="dd-node"><i className="bi bi-send" /></span>
+                    </div>
+                  )}
                 </motion.div>
               </Col>
             ))}
@@ -693,7 +297,7 @@ export function LandingPage() {
                           key={r.email}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => setSelectedRecipientIdx(idx)}
-                          className={`btn btn-sm rounded-pill px-3 ${selectedRecipientIdx === idx ? 'btn-success' : 'btn-outline-secondary'}`}
+                          className={`lp-prospect-pill ${selectedRecipientIdx === idx ? 'active' : ''}`}
                         >
                           {r.first_name} ({r.company})
                         </motion.button>
@@ -730,8 +334,8 @@ export function LandingPage() {
                     </motion.div>
                   </AnimatePresence>
 
-                  <div className="mt-4 bg-success-subtle text-success p-3 rounded-3 border border-success-subtle d-flex align-items-start gap-2">
-                    <i className="bi bi-info-circle-fill mt-1" />
+                  <div className="lp-info-banner mt-4 d-flex align-items-start gap-2">
+                    <i className="bi bi-info-circle-fill mt-1" aria-hidden="true" />
                     <div className="small">
                       Import columns directly from CSV headers. Reachy automatically validates and inserts values into campaign queues.
                     </div>
@@ -829,7 +433,12 @@ export function LandingPage() {
                 viewport={{ once: true, margin: '-100px' }}
                 transition={TRANSITION_BASE}
               >
-                <Row className="align-items-center">
+                <div className="gauge-cosmos" aria-hidden="true">
+                  <StarfieldCanvas className="gauge-stars" starCount={70} />
+                  <div className="gauge-aurora gauge-aurora-1" />
+                  <div className="gauge-aurora gauge-aurora-2" />
+                </div>
+                <Row className="align-items-center gauge-content">
                   <Col md={6} className="mb-4 mb-md-0">
                     <h4 className="fw-bold mb-3 text-white">Daily Volume Gauge</h4>
                     <p className="text-secondary small mb-4">
@@ -1029,7 +638,7 @@ export function LandingPage() {
           </motion.div>
 
           <div className="d-flex flex-wrap justify-content-between align-items-center text-secondary small">
-            <div>&copy; {new Date().getFullYear()} Reachy Inc. All rights reserved.</div>
+            <div>&copy; {COPYRIGHT_YEAR} Reachy Inc. All rights reserved.</div>
             <div className="d-flex gap-3 mt-2 mt-sm-0">
               <a href="#" className="lp-footer-link small">Privacy Policy</a>
               <a href="#" className="lp-footer-link small">Terms of Service</a>

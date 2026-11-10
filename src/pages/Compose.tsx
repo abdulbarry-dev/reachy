@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Alert, Button, Card, Col, Form, Row } from 'react-bootstrap'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { addRecipients } from '../store/recipientsSlice'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { FileDropzone } from '../components/FileDropzone'
@@ -136,7 +136,7 @@ export function Compose() {
                   <Form onSubmit={handleCreate}>
                     {accountsLoading ? (
                       <div className="field">
-                        <Skeleton width={80} height={14} borderRadius={4} style={{ marginBottom: 8 }} />
+                        <Skeleton width={80} height={14} borderRadius={4} className="mb-2" />
                         <Skeleton width="100%" height={44} borderRadius={10} />
                       </div>
                     ) : accounts.length === 0 ? (
@@ -144,7 +144,7 @@ export function Compose() {
                         <i className="bi bi-exclamation-triangle-fill"></i>
                         <span>
                           No email accounts connected.{' '}
-                          <a href="/settings" className="fw-semibold text-decoration-none">Connect one in Settings</a> first.
+                          <Link to="/settings" className="fw-semibold text-decoration-none">Connect one in Settings</Link> first.
                         </span>
                       </Alert>
                     ) : (
@@ -333,13 +333,13 @@ export function Compose() {
                     )}
                   </div>
 
-{previewRecipient ? (
-                      <EmailPreview
-                        subject={subject}
-                        body={body}
-                        recipient={previewRecipient}
-                      />
-                    ) : (
+                  {previewRecipient ? (
+                    <EmailPreview
+                      subject={subject}
+                      body={body}
+                      recipient={previewRecipient}
+                    />
+                  ) : (
                     <div className="empty-state flex-grow-1 d-flex align-items-center justify-content-center">
                       <div>
                         <div className="empty-state-icon">

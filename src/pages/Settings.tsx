@@ -28,14 +28,13 @@ function AccountRow({ acc, onDelete }: { acc: EmailAccount; onDelete: (id: strin
           </div>
         </div>
         <div className="d-flex align-items-center gap-2">
-          <span className="badge bg-light text-muted border d-none d-md-inline" style={{ fontSize: '0.7rem' }}>
+          <span className="badge bg-light text-muted border d-none d-md-inline account-host-badge">
             {acc.smtp_host}:{acc.smtp_port}
           </span>
           <Button
             variant="outline-danger"
             size="sm"
-            className="rounded-circle d-inline-flex align-items-center justify-content-center"
-            style={{ width: 34, height: 34 }}
+            className="rounded-circle d-inline-flex align-items-center justify-content-center account-delete-btn"
             onClick={() => onDelete(acc.id)}
             aria-label={`Delete ${acc.from_email} account`}
           >
@@ -191,7 +190,7 @@ export function Settings() {
                         <i className="bi bi-info-circle"></i>
                         <span>
                           Generate in your{' '}
-                          <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="fw-semibold text-decoration-none" style={{ color: 'var(--reachy-primary)' }}>
+                          <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="fw-semibold text-decoration-none link-reachy">
                             Google Account settings
                           </a>
                           . Requires 2FA enabled.
@@ -233,24 +232,20 @@ export function Settings() {
                           </div>
                         </Col>
                         <Col xs={12}>
-                          <div
-                            className="toggle-field"
-                            onClick={() => setSmtpPort(isSecure ? 587 : 465)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSmtpPort(isSecure ? 587 : 465) } }}
-                          >
-                            <div>
-                              <div className="toggle-field-label">{isSecure ? 'SSL (Port 465)' : 'TLS (Port 587)'}</div>
-                              <div className="toggle-field-hint">Click to switch encryption mode</div>
-                            </div>
+                          <div className="toggle-field">
+                            <label htmlFor="secure-switch" className="toggle-field-copy">
+                              <span className="toggle-field-label">Encryption</span>
+                              <span className="toggle-field-hint">
+                                {isSecure ? 'SSL — implicit TLS on port 465' : 'TLS — STARTTLS on port 587'}
+                              </span>
+                            </label>
                             <Form.Check
                               type="switch"
                               id="secure-switch"
                               checked={isSecure}
                               onChange={(e) => setSmtpPort(e.target.checked ? 465 : 587)}
-                              onClick={(e) => e.stopPropagation()}
-                              style={{ transform: 'scale(1.15)', transformOrigin: 'center' }}
+                              aria-label="Use SSL with port 465 instead of STARTTLS with port 587"
+                              className="toggle-field-switch"
                             />
                           </div>
                         </Col>
@@ -298,11 +293,11 @@ export function Settings() {
                     <div>
                       {[0, 1].map((i) => (
                         <div key={i} className="account-item">
-                          <div className="d-flex align-items-center gap-3" style={{ flex: 1 }}>
+                          <div className="d-flex align-items-center gap-3 flex-grow-1">
                             <Skeleton width={40} height={40} borderRadius={10} />
-                            <div style={{ flex: 1 }}>
+                            <div className="flex-grow-1">
                               <Skeleton width="50%" height={16} borderRadius={6} />
-                              <Skeleton width="80%" height={13} borderRadius={6} style={{ marginTop: 6 }} />
+                              <Skeleton width="80%" height={13} borderRadius={6} className="mt-1" />
                             </div>
                           </div>
                           <Skeleton width={34} height={34} borderRadius={17} />

@@ -6,10 +6,11 @@ import { StatCard } from '../components/StatCard'
 import { useCampaigns } from '../hooks/useCampaigns'
 import { SkeletonStatCard, SkeletonCampaignCard } from '../components/Skeleton'
 import { CampaignCard } from '../components/CampaignCard'
+import { StarfieldCanvas } from './landing/StarfieldCanvas'
 
 export function Dashboard() {
   const navigate = useNavigate()
-  const { campaigns, loading, error } = useCampaigns()
+  const { campaigns, loading, error, refetch } = useCampaigns()
 
   const totals = useMemo(() => {
     const t = { total: 0, sent: 0, failed: 0, pending: 0 }
@@ -29,7 +30,18 @@ export function Dashboard() {
   if (error) {
     return (
       <AnimatedPage>
-        <div className="alert alert-danger border-0 rounded-3 shadow-sm">{error}</div>
+        <Card className="card-reachy border-0">
+          <div className="empty-state">
+            <div className="empty-state-icon empty-state-icon-danger">
+              <i className="bi bi-wifi-off" />
+            </div>
+            <h5 className="empty-state-title">Couldn't load your dashboard</h5>
+            <p className="empty-state-text">{error}</p>
+            <button type="button" className="btn btn-gradient" onClick={() => refetch()}>
+              Try again
+            </button>
+          </div>
+        </Card>
       </AnimatedPage>
     )
   }
@@ -38,7 +50,7 @@ export function Dashboard() {
     <AnimatedPage>
       <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4 mb-sm-5">
         <div>
-          <h1 className="h2 mb-1 fw-extrabold text-dark" style={{ letterSpacing: '-0.04em' }}>Dashboard</h1>
+          <h1 className="page-title h2 mb-1">Dashboard</h1>
           <p className="text-muted mb-0">Your outreach campaigns and metrics at a glance</p>
         </div>
         <Link to="/compose" className="btn btn-gradient px-4 py-2.5 rounded-pill d-inline-flex align-items-center gap-2 text-decoration-none">
@@ -47,17 +59,22 @@ export function Dashboard() {
         </Link>
       </div>
 
-      <Row className="g-4 mb-4 mb-sm-5">
-        {loading ? (
-          <>
-            {[0, 1, 2, 3].map((i) => (
-              <Col key={i} xs={12} sm={6} lg={3}>
-                <SkeletonStatCard delay={i * 0.05} />
-              </Col>
-            ))}
-          </>
-        ) : (
-          <>
+      {loading ? (
+        <Row className="g-4 mb-4 mb-sm-5">
+          {[0, 1, 2, 3].map((i) => (
+            <Col key={i} xs={12} sm={6} lg={3}>
+              <SkeletonStatCard delay={i * 0.05} />
+            </Col>
+          ))}
+        </Row>
+      ) : (
+        <div className="mc-band mb-4 mb-sm-5">
+          <div className="mc-atmosphere" aria-hidden="true">
+            <StarfieldCanvas className="mc-stars" starCount={60} />
+            <div className="mc-aurora mc-aurora-1" />
+            <div className="mc-aurora mc-aurora-2" />
+          </div>
+          <Row className="g-3 g-md-4 mc-content">
             <Col xs={12} sm={6} lg={3}>
               <StatCard icon="bi-people-fill" label="Total recipients" value={totals.total} variant="primary" />
             </Col>
@@ -70,15 +87,15 @@ export function Dashboard() {
             <Col xs={12} sm={6} lg={3}>
               <StatCard icon="bi-exclamation-triangle-fill" label="Failed" value={totals.failed} variant="danger" />
             </Col>
-          </>
-        )}
-      </Row>
+          </Row>
+        </div>
+      )}
 
       <div className="d-flex align-items-center justify-content-between mb-4">
-        <h4 className="fw-bold mb-0 text-dark" style={{ letterSpacing: '-0.03em' }}>Campaigns</h4>
+        <h4 className="section-title mb-0">Campaigns</h4>
         {!loading && (
           <span className="badge bg-light text-dark border px-3 py-2 rounded-pill fw-semibold small">
-            {campaigns.length} Active
+            {campaigns.length} {campaigns.length === 1 ? 'campaign' : 'campaigns'}
           </span>
         )}
       </div>
@@ -92,22 +109,20 @@ export function Dashboard() {
           ))}
         </Row>
       ) : campaigns.length === 0 ? (
-        <div>
-          <Card className="card-reachy border-0 p-5 text-center text-muted">
-            <div className="mb-4">
-              <div className="d-inline-flex align-items-center justify-content-center bg-light text-muted" style={{ width: 80, height: 80, borderRadius: '50%' }}>
-                <i className="bi bi-megaphone fs-1 text-secondary"></i>
-              </div>
+        <Card className="card-reachy border-0">
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              <i className="bi bi-megaphone" />
             </div>
-            <h5 className="text-dark fw-bold mb-2">No campaigns created yet</h5>
-            <p className="mb-4 text-muted small" style={{ maxWidth: 320, margin: '0 auto' }}>
+            <h5 className="empty-state-title">No campaigns created yet</h5>
+            <p className="empty-state-text">
               Create your first email campaign to begin reaching out to your prospects automatically.
             </p>
             <Link to="/compose" className="btn btn-gradient px-4 py-2 rounded-pill text-decoration-none">
               Create Campaign
             </Link>
-          </Card>
-        </div>
+          </div>
+        </Card>
       ) : (
         <div>
           <Row className="g-4">

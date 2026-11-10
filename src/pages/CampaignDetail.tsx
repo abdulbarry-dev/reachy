@@ -3,20 +3,15 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { useRecipients } from '../hooks/useRecipients'
 import { useCampaigns } from '../hooks/useCampaigns'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../hooks/useToast'
 import { SkeletonTable } from '../components/Skeleton'
 import { getEdgeFunctionUrl } from '../lib/edge-functions'
+import { campaignStatusBadgeClass } from '../lib/campaignStatus'
 
-
-const statusBadgeClass: Record<string, string> = {
-  draft: 'badge-reachy-draft',
-  queued: 'badge-reachy-queued',
-  running: 'badge-reachy-running',
-  completed: 'badge-reachy-completed',
-  paused: 'badge-reachy-paused',
-}
+/** While a campaign is running, keep counts and recipient rows fresh. */
+const RUNNING_REFRESH_MS = 30_000
 
 const recipientBadgeClass: Record<string, string> = {
   pending: 'badge-reachy-draft',
@@ -34,6 +29,18 @@ export function CampaignDetail() {
   const [starting, setStarting] = useState(false)
 
   const campaign = campaigns.find((c) => c.id === campaignId)
+  const isRunning = campaign?.status === 'running'
+
+  // Poll while the campaign is actively sending; stops automatically once the
+  // status flips (the campaigns refetch updates `campaign`, clearing the effect).
+  useEffect(() => {
+    if (!isRunning) return
+    const interval = setInterval(() => {
+      refetch()
+      refetchCampaigns()
+    }, RUNNING_REFRESH_MS)
+    return () => clearInterval(interval)
+  }, [isRunning, refetch, refetchCampaigns])
 
   const handleStart = async () => {
     if (!campaignId) return
@@ -90,8 +97,8 @@ export function CampaignDetail() {
       <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
         <div>
           <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
-            <h1 className="h3 mb-0 text-dark fw-extrabold" style={{ letterSpacing: '-0.03em' }}>{campaign.name}</h1>
-            <span className={`badge px-2.5 py-1.5 rounded-pill ${statusBadgeClass[campaign.status] ?? 'bg-secondary text-white'} fw-bold`} style={{ fontSize: '0.7rem' }}>
+            <h1 className="page-title h3 mb-0">{campaign.name}</h1>
+            <span className={`badge px-2.5 py-1.5 rounded-pill ${campaignStatusBadgeClass[campaign.status] ?? 'bg-secondary text-white'} fw-bold campaign-status-badge`}>
               {campaign.status.toUpperCase()}
             </span>
           </div>
@@ -169,7 +176,17 @@ export function CampaignDetail() {
                   ))}
                   {recipients.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center text-muted py-4">No recipients.</td>
+                      <td colSpan={5} className="border-0">
+                        <div className="empty-state">
+                          <div className="empty-state-icon">
+                            <i className="bi bi-inbox"></i>
+                          </div>
+                          <h6 className="empty-state-title">No recipients yet</h6>
+                          <p className="empty-state-text">
+                            This campaign doesn't have any recipients to send to.
+                          </p>
+                        </div>
+                      </td>
                     </tr>
                   )}
                 </tbody>

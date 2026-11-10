@@ -19,6 +19,16 @@ React 19 + TypeScript 6 + Vite 8 + Redux Toolkit + Supabase + Bootstrap 5 + Fram
 
 Linter is `oxlint` — no ESLint config. TypeScript has `noUnusedLocals`/`noUnusedParameters` enabled and `verbatimModuleSyntax` (use `import type`).
 
+## Design System & Typography Authority (`DESIGN.md`)
+
+> **MANDATORY FOR ALL AI AGENTS**:
+> `DESIGN.md` is the single source of truth for all UI, layout, styling, typography, elevation, and motion in this application.
+> - **NEVER** introduce colors, hex codes, or gradients outside the tokens specified in `DESIGN.md`.
+> - **NEVER** introduce alternative font families or unapproved font weights outside `Plus Jakarta Sans` and the monospace stack defined in `DESIGN.md`.
+> - **NEVER** use arbitrary spacing, corner radii, or card shadows outside the tokens in `DESIGN.md`.
+> - **NEVER** introduce off-brand components or UI patterns that deviate from `DESIGN.md`.
+> - Any UI, CSS, or component modifications made by AI agents MUST strictly comply with `DESIGN.md` without exception. Zero drift tolerated.
+
 ## Env
 
 `.env` requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Edge Function secrets (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`) are set in Supabase Dashboard, not in `.env`. See `.env.example`.
@@ -153,5 +163,9 @@ The following files were confirmed unused and deleted:
 - `vercel-web-design-guidelines` — Design tokens, typography, color systems, accessibility
 - `vercel-react-view-transitions` — Native View Transitions API for SPA navigations
 - `vercel-optimize` — Edge functions, ISR, caching, Supabase edge integration (if on Vercel)
+- `gsap-core`, `gsap-react`, `gsap-scrolltrigger`, `gsap-timeline`, `gsap-plugins`, `gsap-utils`, `gsap-performance`, `gsap-frameworks` — Official GSAP skills for animation choreography, ScrollTrigger, and React useGSAP
+- `ui-ux-pro-max`, `ui-styling`, `design-system`, `brand`, `slides`, `banner-design` — UI/UX Pro Max multi-discipline design system & styling
+- `frontend-design`, `frontend-design-2` — Anthropic official frontend design best practices
+- `taste-skill` — Taste, aesthetic sensibilities, visual craftsmanship, and UI polish guidelines
 
 Load with `skill("skill-name")` in OpenCode sessions.

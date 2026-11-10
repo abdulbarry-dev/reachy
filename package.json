@@ -13,13 +13,19 @@
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@reduxjs/toolkit": "^2.12.0",
     "@supabase/supabase-js": "^2.110.1",
+    "@tailwindcss/vite": "^4.3.5",
     "@vercel/analytics": "^2.0.1",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "exceljs": "^4.4.0",
     "framer-motion": "^12.42.2",
+    "gsap": "^3.15.1",
+    "lucide-react": "^1.70.0",
     "papaparse": "^5.5.4",
     "react": "^19.2.7",
     "react-bootstrap": "^2.10.10",
@@ -28,7 +34,9 @@
     "react-redux": "^9.3.0",
     "react-router-dom": "^7.18.1",
     "read-excel-file": "^9.3.2",
-    "swr": "^2.4.2"
+    "swr": "^2.4.2",
+    "tailwind-merge": "^3.7.0",
+    "tailwindcss": "^4.3.5"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -41,7 +49,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^29.1.1",
-    "oxlint": "^1.71.0",
+    "oxlint": "^1.93.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vitest": "^4.1.10"

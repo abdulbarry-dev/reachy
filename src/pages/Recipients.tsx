@@ -28,6 +28,7 @@ export function Recipients() {
   const { toast } = useToast()
 
   const [email, setEmail] = useState('')
+  const [emailError, setEmailError] = useState('')
   const [name, setName] = useState('')
   const [company, setCompany] = useState('')
   const [addedCount, setAddedCount] = useState(0)
@@ -52,9 +53,13 @@ export function Recipients() {
   const handleManualAdd = (e: React.FormEvent) => {
     e.preventDefault()
     const normalized = email.trim().toLowerCase()
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+      setEmailError('Enter a valid email address, e.g. contact@company.com')
+      return
+    }
 
     dispatch(addRecipient({ email: normalized, name: name.trim() || undefined, company: company.trim() || undefined }))
+    setEmailError('')
     setEmail('')
     setName('')
     setCompany('')
@@ -240,9 +245,17 @@ export function Recipients() {
                         placeholder="contact@company.com"
                         className="form-control-reachy"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError('') }}
+                        aria-invalid={emailError !== ''}
+                        aria-describedby={emailError ? 'recip-email-error' : undefined}
                         required
                       />
+                      {emailError && (
+                        <div id="recip-email-error" className="form-error-reachy mt-2 mb-0" role="alert">
+                          <i className="bi bi-exclamation-circle" aria-hidden="true"></i>
+                          <span>{emailError}</span>
+                        </div>
+                      )}
                     </div>
                     <div className="field">
                       <Form.Label className="form-label-reachy" htmlFor="recip-name">Name</Form.Label>
@@ -347,7 +360,7 @@ export function Recipients() {
               <Table hover className="table-reachy mb-0 align-middle">
                 <thead>
                   <tr>
-                    <th style={{ width: 40 }}>
+                    <th className="col-check">
                       <Form.Check
                         checked={recipients.length > 0 && selected.size === recipients.length}
                         onChange={toggleAll}
@@ -357,7 +370,7 @@ export function Recipients() {
                     <th>Email</th>
                     <th className="col-name">Name</th>
                     <th className="col-company">Company</th>
-                    <th style={{ width: 48 }} className="text-end pe-2">Actions</th>
+                    <th className="col-actions text-end pe-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -447,7 +460,7 @@ export function Recipients() {
           <Button variant="outline-secondary" className="rounded-pill px-4" onClick={() => setEditTarget(null)}>
             Cancel
           </Button>
-          <button type="button" className="btn-submit-reachy" style={{ width: 'auto', padding: '0.5rem 1.5rem' }} onClick={handleSaveEdit}>
+          <button type="button" className="btn-submit-reachy w-auto py-2 px-4" onClick={handleSaveEdit}>
             <i className="bi bi-check-lg"></i>
             Save changes
           </button>

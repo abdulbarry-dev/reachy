@@ -1,22 +1,7 @@
 import { memo, useCallback } from 'react'
 import { Card } from 'react-bootstrap'
+import { campaignStatusBadgeClass, campaignStatusProgressBg } from '../lib/campaignStatus'
 import type { CampaignWithCounts } from '../types'
-
-const statusBadgeClass: Record<string, string> = {
-  draft: 'badge-reachy-draft',
-  queued: 'badge-reachy-queued',
-  running: 'badge-reachy-running',
-  completed: 'badge-reachy-completed',
-  paused: 'badge-reachy-paused',
-}
-
-const statusProgressBg: Record<string, string> = {
-  draft: '#3AA8AD',
-  queued: '#f59e0b',
-  running: '#3AB397',
-  completed: '#10b981',
-  paused: '#f59e0b',
-}
 
 interface CampaignCardProps {
   campaign: CampaignWithCounts
@@ -41,7 +26,7 @@ export const CampaignCard = memo(function CampaignCard({ campaign, onClick }: Ca
       <Card.Body className="p-4 d-flex flex-column justify-content-between">
         <div>
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <span className={`badge px-2.5 py-1.5 rounded-pill ${statusBadgeClass[campaign.status] ?? 'bg-secondary text-white'} fw-bold`} style={{ fontSize: '0.7rem', letterSpacing: '0.02em' }}>
+            <span className={`badge px-2.5 py-1.5 rounded-pill ${campaignStatusBadgeClass[campaign.status] ?? 'bg-secondary text-white'} fw-bold`} style={{ fontSize: '0.7rem', letterSpacing: '0.02em' }}>
               <i className="bi bi-circle-fill me-1.5" style={{ fontSize: '0.4rem', verticalAlign: 'middle' }}></i>
               {campaign.status.toUpperCase()}
             </span>
@@ -59,7 +44,7 @@ export const CampaignCard = memo(function CampaignCard({ campaign, onClick }: Ca
                 width: `${progressPercent}%`,
                 borderRadius: 3,
                 transition: 'width 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-                backgroundColor: statusProgressBg[campaign.status] ?? 'var(--reachy-primary)',
+                backgroundColor: campaignStatusProgressBg[campaign.status] ?? 'var(--reachy-primary)',
               }}
             ></div>
           </div>

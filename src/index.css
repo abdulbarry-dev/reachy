@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* Core Custom Variable Tokens */
 :root {
   --reachy-primary: #3AB397;
@@ -348,36 +350,6 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
 }
 
-.sidebar-theme-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sidebar-theme-row button {
-  width: 38px;
-  height: 38px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 1.15rem;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.sidebar-theme-row button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.sidebar.is-collapsed .sidebar-theme-row {
-  padding: 4px 0;
-}
-
 .sidebar-footer {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   padding: 12px 14px 14px;
@@ -648,6 +620,107 @@ h1, h2, h3, h4, h5, h6 {
   color: #dc2626 !important;
 }
 
+/* ─── Mission-control band (Dashboard overview) ──────────────────────────────
+   The one deep-space accent surface in the app: reuses DESIGN.md's sanctioned
+   sidebar gradient (DARK SURFACE) as the dashboard overview band. */
+.mc-band {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, #1e2332 0%, #282e44 100%);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+  padding: 1.75rem;
+}
+.mc-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+.mc-stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.mc-content {
+  position: relative;
+  z-index: 1;
+}
+.mc-aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
+  opacity: 0.5;
+}
+.mc-aurora-1 {
+  width: 300px;
+  height: 300px;
+  top: -140px;
+  right: 8%;
+  background: radial-gradient(circle, rgba(58, 179, 151, 0.35) 0%, transparent 70%);
+  animation: mc-aurora-drift-1 18s ease-in-out infinite alternate;
+}
+.mc-aurora-2 {
+  width: 260px;
+  height: 260px;
+  bottom: -150px;
+  left: 4%;
+  background: radial-gradient(circle, rgba(58, 168, 173, 0.3) 0%, transparent 70%);
+  animation: mc-aurora-drift-2 22s ease-in-out infinite alternate;
+}
+@keyframes mc-aurora-drift-1 {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-30px, 24px, 0) scale(1.12); }
+}
+@keyframes mc-aurora-drift-2 {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(24px, -18px, 0) scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-aurora-1,
+  .mc-aurora-2 {
+    animation: none;
+  }
+}
+
+/* Stat cards float as translucent glass panels on the band.
+   Status text switches from the -600 print palette to its on-dark equivalents
+   already sanctioned by the landing gauge (amber-500 / emerald-500 / red-500). */
+.mc-band .card-reachy {
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.mc-band .card-reachy h3 {
+  color: #ffffff;
+}
+.mc-band .card-reachy .text-muted {
+  color: rgba(248, 250, 252, 0.6) !important;
+}
+.mc-band .text-bg-warning {
+  background-color: rgba(245, 158, 11, 0.14) !important;
+  color: #f59e0b !important;
+}
+.mc-band .text-bg-success {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+  color: rgb(16, 185, 129) !important;
+}
+.mc-band .text-bg-danger {
+  background-color: rgba(239, 68, 68, 0.14) !important;
+  color: #ef4444 !important;
+}
+@media (max-width: 575.98px) {
+  .mc-band {
+    padding: 1.25rem;
+  }
+}
+
 /* ----------------------------------------- */
 /* Skeleton Loading Components               */
 /* ----------------------------------------- */
@@ -683,13 +756,25 @@ h1, h2, h3, h4, h5, h6 {
   animation: skeleton-fade-in 0.4s ease-out both;
 }
 
+.skeleton-card-padded {
+  padding: 1.5rem;
+}
+
+.skeleton-footer {
+  border-color: var(--reachy-border) !important;
+}
+
+.skeleton-row {
+  padding: 1rem 0.75rem;
+}
+
+.skeleton-row-divider {
+  border-top: 1px solid var(--reachy-border);
+}
+
 @keyframes skeleton-fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.skeleton-text .skeleton {
-  margin: 0;
 }
 
 /* Custom Tables */
@@ -738,6 +823,14 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 350px;
   font-size: 0.8rem;
   color: #dc2626 !important;
+}
+
+.table-reachy th.col-check {
+  width: 40px;
+}
+
+.table-reachy th.col-actions {
+  width: 48px;
 }
 
 @media (min-width: 768px) {
@@ -1190,8 +1283,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 
-/* Footer Custom Styling */
-footer {
+/* Footer Custom Styling — scoped to the app's white footer so the
+   landing page's dark `.lp-footer` keeps its authored background */
+footer.bg-white {
   background: #ffffff !important;
   border-top: 1px solid rgba(58, 179, 151, 0.08) !important;
 }
@@ -1225,6 +1319,12 @@ footer {
   background-color: rgba(245, 158, 11, 0.08) !important;
   color: #d97706 !important;
   border: 1px solid rgba(245, 158, 11, 0.15) !important;
+}
+
+/* Status pill used on the campaign detail header */
+.campaign-status-badge {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
 }
 .badge-reachy-failed {
   background-color: rgba(239, 68, 68, 0.08) !important;
@@ -1300,6 +1400,41 @@ footer {
 }
 
 /* ----------------------------------------- */
+/* Confirm dialog                            */
+/* ----------------------------------------- */
+.confirm-modal-icon {
+  width: 64px;
+  height: 64px;
+}
+
+.confirm-modal-icon-danger {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.confirm-modal-icon-danger .confirm-modal-icon-glyph {
+  color: #ef4444;
+}
+
+.confirm-modal-icon-primary {
+  background: rgba(var(--reachy-primary-rgb), 0.1);
+}
+
+.confirm-modal-icon-primary .confirm-modal-icon-glyph {
+  color: var(--reachy-primary);
+}
+
+.confirm-modal-icon-glyph {
+  font-size: 1.6rem;
+}
+
+/* Vertical divider between the two footer halves */
+.footer-divider {
+  width: 1px;
+  height: 14px;
+  background: var(--reachy-border-color);
+}
+
+/* ----------------------------------------- */
 /* Page Header & Section Utilities           */
 /* ----------------------------------------- */
 .page-title {
@@ -1344,6 +1479,12 @@ footer {
   color: var(--reachy-primary);
   font-size: 1.75rem;
   margin-bottom: 1.25rem;
+}
+
+/* Danger variant per DESIGN.md status palette (rose-50 / rose-600) */
+.empty-state-icon-danger {
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .empty-state-title {
@@ -1411,6 +1552,16 @@ textarea.form-control-reachy {
 .form-select-reachy:hover:not(:focus):not(:disabled) {
   border-color: #cbd5e1 !important;
   background-color: #f8fafc !important;
+}
+
+/* Invalid state — rose-500 tint per DESIGN.md status palette */
+.form-control-reachy[aria-invalid="true"],
+.form-control-reachy[aria-invalid="true"]:hover {
+  border-color: rgba(239, 68, 68, 0.55) !important;
+  background-color: rgba(239, 68, 68, 0.03) !important;
+}
+.form-control-reachy[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 0.2rem rgba(239, 68, 68, 0.12) !important;
 }
 
 /* Focus state — clear teal ring */
@@ -1534,6 +1685,30 @@ textarea.form-control-reachy {
   font-size: 0.7rem;
   color: #94a3b8;
   margin-top: 2px;
+}
+
+/* Label copy column of the toggle field (label click toggles the switch) */
+.toggle-field-copy {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* Switch scale lives here instead of inline style */
+.toggle-field-switch .form-check-input {
+  transform: scale(1.15);
+  transform-origin: center;
+  cursor: pointer;
+}
+
+/* Brand-colored inline link */
+.link-reachy {
+  color: var(--reachy-primary);
+}
+
+.link-reachy:hover {
+  color: var(--reachy-primary-hover);
 }
 
 /* Primary submit button */
@@ -1669,6 +1844,16 @@ textarea.form-control-reachy {
   justify-content: center;
   font-weight: 700;
   font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.account-host-badge {
+  font-size: 0.7rem;
+}
+
+.account-delete-btn {
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
 }
 
