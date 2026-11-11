@@ -37,12 +37,12 @@ export function ConfirmModal({
         <p className="text-muted small mb-0">{message}</p>
       </Modal.Body>
       <Modal.Footer className="border-0 pt-0 justify-content-center pb-4 gap-2">
-        <Button variant="outline-secondary" className="rounded-pill px-4" onClick={onCancel} disabled={loading}>
+        <Button variant="outline-secondary" className="btn-reachy-outline" onClick={onCancel} disabled={loading}>
           Cancel
         </Button>
         <Button
           variant={confirmVariant}
-          className={`rounded-pill px-4 ${confirmVariant === 'danger' ? '' : 'btn-gradient'}`}
+          className={`px-4 ${confirmVariant === 'danger' ? 'btn-reachy-danger' : 'btn-gradient'}`}
           onClick={onConfirm}
           disabled={loading}
         >

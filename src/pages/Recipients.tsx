@@ -195,7 +195,7 @@ export function Recipients() {
                     <span className="small text-muted me-1">Need a template?</span>
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-1"
+                      className="btn-reachy-outline btn-reachy-sm gap-1"
                       onClick={() => handleDownloadTemplate('csv')}
                       disabled={downloading}
                     >
@@ -204,7 +204,7 @@ export function Recipients() {
                     </button>
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-1"
+                      className="btn-reachy-outline btn-reachy-sm gap-1"
                       onClick={() => handleDownloadTemplate('xlsx')}
                       disabled={downloading}
                     >
@@ -314,7 +314,7 @@ export function Recipients() {
                 <Button
                   variant="outline-secondary"
                   size="sm"
-                  className="rounded-pill d-inline-flex align-items-center gap-1"
+                  className="btn-reachy-outline btn-reachy-sm gap-1"
                   onClick={exportAllJson}
                   disabled={recipients.length === 0}
                 >
@@ -324,7 +324,7 @@ export function Recipients() {
                 <Button
                   variant="outline-secondary"
                   size="sm"
-                  className="rounded-pill d-inline-flex align-items-center gap-1"
+                  className="btn-reachy-outline btn-reachy-sm gap-1"
                   onClick={exportAllCsv}
                   disabled={recipients.length === 0}
                 >
@@ -335,7 +335,7 @@ export function Recipients() {
                   <Button
                     variant="outline-danger"
                     size="sm"
-                    className="rounded-pill d-inline-flex align-items-center gap-1"
+                    className="btn-reachy-danger btn-reachy-sm gap-1"
                     onClick={() => setBulkDelete(true)}
                   >
                     <i className="bi bi-trash"></i>
@@ -345,7 +345,7 @@ export function Recipients() {
                 <Button
                   variant="outline-danger"
                   size="sm"
-                  className="rounded-pill d-inline-flex align-items-center gap-1"
+                  className="btn-reachy-danger btn-reachy-sm gap-1"
                   onClick={() => setClearAll(true)}
                   disabled={recipients.length === 0}
                 >
@@ -457,7 +457,7 @@ export function Recipients() {
           )}
         </Modal.Body>
         <Modal.Footer className="border-0">
-          <Button variant="outline-secondary" className="rounded-pill px-4" onClick={() => setEditTarget(null)}>
+          <Button variant="outline-secondary" className="btn-reachy-outline" onClick={() => setEditTarget(null)}>
             Cancel
           </Button>
           <button type="button" className="btn-submit-reachy w-auto py-2 px-4" onClick={handleSaveEdit}>

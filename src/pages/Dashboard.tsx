@@ -53,7 +53,7 @@ export function Dashboard() {
           <h1 className="page-title h2 mb-1">Dashboard</h1>
           <p className="text-muted mb-0">Your outreach campaigns and metrics at a glance</p>
         </div>
-        <Link to="/compose" className="btn btn-gradient px-4 py-2.5 rounded-pill d-inline-flex align-items-center gap-2 text-decoration-none">
+        <Link to="/compose" className="btn btn-gradient">
           <i className="bi bi-plus-lg fs-6"></i>
           <span>New campaign</span>
         </Link>
@@ -118,7 +118,7 @@ export function Dashboard() {
             <p className="empty-state-text">
               Create your first email campaign to begin reaching out to your prospects automatically.
             </p>
-            <Link to="/compose" className="btn btn-gradient px-4 py-2 rounded-pill text-decoration-none">
+            <Link to="/compose" className="btn btn-gradient">
               Create Campaign
             </Link>
           </div>

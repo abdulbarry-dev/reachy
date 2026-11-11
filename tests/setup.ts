@@ -52,3 +52,28 @@ if (!storageDescriptor || isNodeAccessorStub) {
 if (typeof HTMLCanvasElement !== 'undefined') {
   HTMLCanvasElement.prototype.getContext = () => null as never
 }
+
+/**
+ * jsdom ships no `matchMedia`, and `src/lib/gsap.ts` registers ScrollTrigger at
+ * import time — before any per-suite stub runs. Provide a quiet default that
+ * matches nothing, so merely importing GSAP cannot crash a suite. Tests that
+ * care about a specific query still install their own stub in `beforeEach`.
+ */
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string): MediaQueryList =>
+      ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      }) as unknown as MediaQueryList,
+  })
+}
+

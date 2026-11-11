@@ -5,13 +5,10 @@ import { useNavigate } from 'react-router-dom'
 // - GSAP drives the hero atmosphere (aurora, starfield, entrance, parallax)
 // - Framer Motion drives the small hero widgets and the rest of the page
 import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion'
-import { gsap } from 'gsap'
-import { useGSAP } from '@gsap/react'
+import { gsap, SplitText, useGSAP } from '../../lib/gsap'
 import { StarfieldCanvas } from './StarfieldCanvas'
 import { EASE_OUT_EXPO } from './landingMotion'
 import './landingHero.css'
-
-gsap.registerPlugin(useGSAP)
 
 // ─── Hero mock data ──────────────────────────────────────────────────────────
 
@@ -143,11 +140,27 @@ export function HeroSection() {
           const conditions = context.conditions ?? {}
           if (!conditions.motionOK) return
 
+          // Hero title — SplitText masked line reveal (once, on load).
+          // autoSplit re-splits when the web font finishes loading; the tween
+          // returned from onSplit() is cleaned up and time-synced per re-split.
+          const titleSplit = SplitText.create('.hero-title', {
+            type: 'lines',
+            mask: 'lines',
+            autoSplit: true,
+            onSplit: (self) =>
+              gsap.from(self.lines, {
+                yPercent: 110,
+                duration: 0.8,
+                stagger: 0.09,
+                ease: 'power3.out',
+              }),
+          })
+
           // Entrance — once, on load, top-down
           gsap
             .timeline({ defaults: { ease: 'power3.out', duration: 0.7 } })
             .from('.hero-badge', { y: 16, autoAlpha: 0, duration: 0.55 }, 0)
-            .from(['.hero-title', '.hero-lead', '.hero-actions'], { y: 24, autoAlpha: 0, stagger: 0.09 }, 0.1)
+            .from(['.hero-lead', '.hero-actions'], { y: 24, autoAlpha: 0, stagger: 0.09 }, 0.1)
             .from('.hero-step-item', { y: 18, autoAlpha: 0, stagger: 0.08, duration: 0.55 }, 0.22)
             .from('.hero-mockup-entrance', { y: 32, scale: 0.97, autoAlpha: 0, duration: 0.85, ease: 'power2.out' }, 0.2)
             .from('.hero-glow-ring', { autoAlpha: 0, duration: 1.4, ease: 'power1.inOut' }, 0.3)
@@ -161,11 +174,13 @@ export function HeroSection() {
           gsap.to('.hero-orbit-1', { rotation: 360, duration: 26, ease: 'none', repeat: -1 })
           gsap.to('.hero-orbit-2', { rotation: -360, duration: 38, ease: 'none', repeat: -1 })
 
-          if (!conditions.finePointer) return
+          const cleanups: Array<() => void> = [() => titleSplit.revert()]
+
+          if (!conditions.finePointer) return () => cleanups.forEach((fn) => fn())
 
           // Pointer parallax — one queued tween per layer, created once (quickTo)
           const card = cardRef.current
-          if (!card) return
+          if (!card) return () => cleanups.forEach((fn) => fn())
 
           const layers = [
             { el: card.querySelector<HTMLElement>('.hero-aurora-1'), depth: 12 },
@@ -198,10 +213,11 @@ export function HeroSection() {
 
           card.addEventListener('pointermove', onMove)
           card.addEventListener('pointerleave', onLeave)
-          return () => {
+          cleanups.push(() => {
             card.removeEventListener('pointermove', onMove)
             card.removeEventListener('pointerleave', onLeave)
-          }
+          })
+          return () => cleanups.forEach((fn) => fn())
         }
       )
 

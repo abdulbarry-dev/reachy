@@ -158,6 +158,14 @@ The following files were confirmed unused and deleted:
 
 ## Installed Agent Skills (`.agents/skills/`)
 
+### Required Skill Selection & Design Workflow
+
+For every requested implementation, agents must first assess the task and deliberately select the smallest relevant set of installed skills. Agents have discretion to use or exclude any listed skill; they must not load every skill by default. Select skills whose documented scope directly applies to the requested work (for example, React performance skills for React refactors, GSAP skills for animation work, and UI/UX skills for interface changes). Exclude unrelated skills to keep the workflow focused.
+
+Before modifying any UI, CSS, component, or layout code, agents must read `DESIGN.md` and follow it as the authoritative source for typography, including the approved font family, font weights, type scale, line height, letter spacing, and responsive typography rules. A skill may inform implementation technique, but it may never override `DESIGN.md`. All design-system constraints stated earlier in this file remain mandatory: do not introduce unapproved fonts, weights, colors, spacing, radii, shadows, gradients, or UI patterns.
+
+For non-visual work, agents should still apply any relevant engineering skills, while avoiding unnecessary UI/design skills. When a task crosses disciplines, agents may combine the relevant skills and must preserve the existing architecture, accessibility requirements, and `DESIGN.md` compliance.
+
 - `vercel-react-best-practices` — React 19 hooks, performance, data fetching, bundle optimization
 - `vercel-composition-patterns` — Compound components, render props, context, slots (React 19 APIs)
 - `vercel-web-design-guidelines` — Design tokens, typography, color systems, accessibility

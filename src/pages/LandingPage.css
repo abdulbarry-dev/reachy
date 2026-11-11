@@ -22,6 +22,21 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Scroll Progress Bar (GSAP ScrollTrigger Scrubbed) */
+.landing-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3AB397 0%, #3AA8AD 100%);
+  transform-origin: left center;
+  transform: scaleX(0);
+  z-index: 10001;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(58, 179, 151, 0.4);
+}
+
 /* Background Blobs */
 .lp-blob {
   position: absolute;
@@ -211,16 +226,21 @@
   letter-spacing: -0.005em;
   white-space: nowrap;
   text-decoration: none !important;
-  transition: filter 0.18s ease, transform 0.18s ease;
+  transition:
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-lp-nav-cta:hover {
   color: #ffffff !important;
-  filter: brightness(0.93);
+  transform: translateY(-1px);
+  filter: brightness(1.04);
 }
 
 .btn-lp-nav-cta:active {
-  transform: translateY(1px);
+  transform: translateY(0);
+  filter: brightness(0.97);
+  transition-duration: 0.06s;
 }
 
 /* Mobile trigger — 44px touch target, no chip around the glyph. */
@@ -410,36 +430,83 @@
   filter: brightness(0.93);
 }
 
-/* Buttons & Badges */
+/* Buttons & Badges — same grammar as the app's Reachy button system
+   (0.75rem radius, hover steps up 1px, press returns to rest, 160ms) */
 .btn-lp-primary {
-  background-color: var(--lp-primary);
-  border-color: var(--lp-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0 1.75rem;
+  border: none;
+  border-radius: 0.75rem;
   color: #fff;
+  font-size: 1rem;
   font-weight: 600;
-  padding: 0.75rem 1.75rem;
-  border-radius: 50rem;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 14px rgba(58, 179, 151, 0.3);
+  line-height: 1;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  background: linear-gradient(135deg, var(--lp-primary) 0%, var(--lp-secondary) 100%);
+  box-shadow: 0 4px 16px rgba(58, 179, 151, 0.35);
+  transition:
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .btn-lp-primary:hover {
-  background-color: var(--lp-secondary);
-  border-color: var(--lp-secondary);
   color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(58, 179, 151, 0.4);
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 6px 20px rgba(58, 179, 151, 0.35);
+}
+.btn-lp-primary:active {
+  transform: translateY(0);
+  filter: brightness(0.97);
+  box-shadow: 0 2px 8px rgba(58, 179, 151, 0.3);
+  transition-duration: 0.06s;
+}
+.btn-lp-primary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(58, 179, 151, 0.15),
+    0 4px 16px rgba(58, 179, 151, 0.35);
 }
 .btn-lp-outline {
-  background-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0 1.5rem;
   border: 1.5px solid var(--lp-primary);
+  border-radius: 0.75rem;
   color: var(--lp-primary);
+  font-size: 1rem;
   font-weight: 600;
-  padding: 0.75rem 1.75rem;
-  border-radius: 50rem;
-  transition: all 0.3s ease;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  background-color: transparent;
+  transition:
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .btn-lp-outline:hover {
-  background-color: rgba(58, 179, 151, 0.05);
-  transform: translateY(-2px);
+  color: var(--lp-primary);
+  background-color: rgba(58, 179, 151, 0.1);
+  transform: translateY(-1px);
+}
+.btn-lp-outline:active {
+  background-color: rgba(58, 179, 151, 0.14);
+  transform: translateY(0);
+  transition-duration: 0.06s;
+}
+.btn-lp-outline:focus-visible {
+  outline: 2px solid var(--lp-primary);
+  outline-offset: 3px;
 }
 .lp-badge {
   background-color: rgba(58, 179, 151, 0.1);
@@ -458,11 +525,19 @@
 
 /* Sections General */
 .lp-section {
-  padding: 6.5rem 0;
+  padding: 5rem 0;
   position: relative;
   z-index: 1;
   /* Clears the floating bar when an anchor is jumped to */
   scroll-margin-top: 5rem;
+}
+
+/* Alternating section tint — keeps the scroll rhythm continuous instead of
+   dead white bands between sections. Mint alpha of the brand primary. */
+.lp-section-tint {
+  background: linear-gradient(180deg, rgba(58, 179, 151, 0.05) 0%, rgba(58, 179, 151, 0.02) 100%);
+  border-top: 1px solid rgba(58, 179, 151, 0.08);
+  border-bottom: 1px solid rgba(58, 179, 151, 0.08);
 }
 
 .text-gradient {
@@ -1056,8 +1131,9 @@
   }
   .btn-lp-primary,
   .btn-lp-outline {
-    padding: 0.65rem 1.25rem;
-    font-size: 0.85rem;
+    min-height: 44px;
+    padding: 0 1.25rem;
+    font-size: 0.9375rem;
   }
   .lp-badge {
     font-size: 0.7rem;

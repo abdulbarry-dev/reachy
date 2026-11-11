@@ -107,12 +107,12 @@ export function CampaignDetail() {
           </p>
         </div>
         <div className="d-flex gap-2">
-          <Button variant="outline-secondary" className="rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5" onClick={() => navigate('/dashboard')}>
+          <Button variant="outline-secondary" className="btn-reachy-outline btn-reachy-sm" onClick={() => navigate('/dashboard')}>
             <i className="bi bi-arrow-left"></i>
             <span>Back</span>
           </Button>
           {campaign.status === 'draft' && (
-            <Button variant="primary" className="btn-gradient rounded-pill px-4 py-1.5 d-inline-flex align-items-center gap-1.5" onClick={handleStart} disabled={starting}>
+            <Button className="btn-gradient" onClick={handleStart} disabled={starting}>
               {starting ? (
                 <span className="spinner-border spinner-border-sm" />
               ) : (

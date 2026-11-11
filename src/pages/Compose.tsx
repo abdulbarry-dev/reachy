@@ -324,7 +324,7 @@ export function Compose() {
                       <Button
                         variant="outline-primary"
                         size="sm"
-                        className="rounded-pill"
+                        className="btn-reachy-outline btn-reachy-sm"
                         onClick={() => setPreviewIndex((i) => (i + 1) % importedRecipients.length)}
                       >
                         <i className="bi bi-arrow-repeat me-1"></i>

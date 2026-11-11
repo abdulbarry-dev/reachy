@@ -56,31 +56,33 @@ export function generateCSV(recipients: ImportedRecipient[]): Blob {
 }
 
 export async function generateExcel(recipients: ImportedRecipient[]): Promise<Blob> {
-  const ExcelJS = await import('exceljs')
+  const writeXlsxFile = (await import('write-excel-file/universal')).default
 
   const mergeKeys = discoverMergeKeys(recipients)
   const exampleRow = buildExampleRow(mergeKeys)
   const headers = [...STANDARD_COLUMNS, ...mergeKeys]
 
-  const workbook = new ExcelJS.Workbook()
-  const worksheet = workbook.addWorksheet('Template')
+  const headerRow = headers.map((key) => ({
+    value: key,
+    fontWeight: 'bold' as const,
+  }))
 
-  const headerRow = worksheet.addRow(headers)
-  headerRow.font = { bold: true }
+  const dataRow = headers.map((key) => ({
+    type: String,
+    value: exampleRow[key] ?? '',
+  }))
 
-  worksheet.addRow(headers.map((key) => exampleRow[key] ?? ''))
-
-  for (let i = 0; i < headers.length; i++) {
-    const headerLength = headers[i].length
-    const valueLength = (exampleRow[headers[i]] ?? '').length
+  const columns = headers.map((key) => {
+    const headerLength = key.length
+    const valueLength = (exampleRow[key] ?? '').length
     const width = Math.max(headerLength, valueLength, 10)
-    worksheet.getColumn(i + 1).width = Math.min(width, 40)
-  }
-
-  const buffer = await workbook.xlsx.writeBuffer()
-  return new Blob([buffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    return { width: Math.min(width, 40) }
   })
+
+  return await writeXlsxFile([headerRow, dataRow], {
+    columns,
+    sheet: 'Template',
+  }).toBlob()
 }
 
 export async function generateTemplate(
