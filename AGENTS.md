@@ -10,6 +10,7 @@ npm run preview   # vite preview
 npm run test      # vitest (watch mode)
 npm run test:run  # vitest run (CI-friendly)
 npm run coverage  # vitest run --coverage
+npm run lh        # Lighthouse audit (builds, serves dist/, reports to reports/lighthouse/)
 npx tsc -b        # typecheck only (skip build)
 
 # `npx tsc --noEmit` checks NOTHING here: the root tsconfig.json has

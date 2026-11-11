@@ -1,11 +1,12 @@
 import { useEffect, lazy, Suspense } from 'react'
-import { Route, Routes, Navigate, useLocation } from 'react-router-dom'
-import { AnimatePresence, MotionConfig } from 'framer-motion'
+import { Route, Routes, Navigate } from 'react-router-dom'
+import { MotionConfig } from 'framer-motion'
 import { supabase } from './lib/supabase'
 import { useDispatch, useSelector } from 'react-redux'
 import { setUser, finishBootstrap } from './store/authSlice'
 import { Layout } from './components/Layout'
 import { AuthLoadingSkeleton } from './components/AuthLoadingSkeleton'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { PageFallback } from './components/PageFallback'
 import type { RootState, AppDispatch } from './store'
 
@@ -31,8 +32,6 @@ function ProtectedRoute() {
 function App() {
   const dispatch = useDispatch<AppDispatch>()
 
-  const location = useLocation()
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       dispatch(setUser(session?.user ?? null))
@@ -50,9 +49,11 @@ function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <AnimatePresence mode="wait">
+      <ErrorBoundary>
         <Suspense fallback={<PageFallback />}>
-          <Routes location={location} key={location.pathname}>
+          {/* No key: the shell must survive navigation. Protected pages suspend
+              inside Layout's own boundary, so only the outlet is replaced. */}
+          <Routes>
             {/* Public routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Auth mode="login" />} />
@@ -72,7 +73,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
-      </AnimatePresence>
+      </ErrorBoundary>
     </MotionConfig>
   )
 }

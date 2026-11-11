@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, Suspense } from 'react'
 import { Container, Stack } from 'react-bootstrap'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
 import { signOut } from '../store/authSlice'
@@ -8,6 +8,8 @@ import { useToast } from '../hooks/useToast'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { ConfirmModal } from './ConfirmModal'
 import { BrandLogo } from './BrandLogo'
+import { ErrorBoundary } from './ErrorBoundary'
+import { PageFallback } from './PageFallback'
 import type { RootState, AppDispatch } from '../store'
 
 const SIDEBAR_EXPANDED = 260
@@ -24,6 +26,7 @@ const bottomLink = { to: '/settings', label: 'Settings', icon: 'bi-gear', end: f
 export function Layout() {
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
+  const location = useLocation()
   const user = useSelector((state: RootState) => state.auth.user)
   const { toast } = useToast()
   const [collapsed, setCollapsed] = useState(false)
@@ -91,7 +94,7 @@ export function Layout() {
           animate={
             isMobile
               ? { x: mobileOpen ? 0 : '-100%' }
-              : { width: sidebarWidth }
+              : { x: 0, width: sidebarWidth }
           }
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         >
@@ -216,7 +219,14 @@ export function Layout() {
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       >
         <main id="main-content" className="page-container">
-          <Outlet />
+          {/* The shell stays mounted while a page chunk loads or a page crashes.
+              Keyed by route so navigating away clears a caught error without
+              remounting anything above the outlet. */}
+          <ErrorBoundary key={location.pathname}>
+            <Suspense fallback={<PageFallback variant="inline" />}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
         </main>
 
         <footer className="bg-white border-top py-3">

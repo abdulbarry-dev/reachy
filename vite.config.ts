@@ -4,6 +4,13 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    watch: {
+      // Ignore audit artifacts so writing a Lighthouse report doesn't trigger a
+      // page reload while a dev-server audit is in progress.
+      ignored: ['**/reports/**', '**/.lighthouse/**'],
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

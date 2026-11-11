@@ -18,6 +18,12 @@ coverage
 shots/
 .playwright-mcp/
 
+# Lighthouse artifacts (reports + auto-downloaded Chrome for Testing)
+.lighthouse/
+reports/lighthouse/
+.taste-skill/
+pnpm-lock.yaml
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

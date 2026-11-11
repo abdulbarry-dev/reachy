@@ -10,7 +10,11 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "lh": "node scripts/lighthouse.mjs",
+    "lh:dev": "node scripts/lighthouse.mjs --dev",
+    "lh:desktop": "node scripts/lighthouse.mjs --desktop",
+    "lh:open": "node scripts/lighthouse.mjs --open"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -35,6 +39,7 @@
     "write-excel-file": "^4.1.1"
   },
   "devDependencies": {
+    "@puppeteer/browsers": "^3.2.7",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -45,6 +50,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^29.1.1",
+    "lighthouse": "^13.6.0",
     "oxlint": "^1.93.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",

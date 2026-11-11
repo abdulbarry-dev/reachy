@@ -5,7 +5,7 @@ import { LoadingSpinner } from './LoadingSpinner'
 
 gsap.registerPlugin(useGSAP)
 
-export function PageFallback() {
+export function PageFallback({ variant = 'page' }: { variant?: 'page' | 'inline' }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const barRef = useRef<HTMLDivElement>(null)
 
@@ -43,7 +43,7 @@ export function PageFallback() {
       ref={containerRef}
       className="d-flex align-items-center justify-content-center"
       style={{
-        minHeight: '100vh',
+        minHeight: variant === 'inline' ? 320 : '100vh',
         background: 'var(--reachy-bg-soft, #f4fbf9)',
         fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
       }}

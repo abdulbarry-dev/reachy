@@ -53,6 +53,8 @@ Whether you're a solo founder running outbound or a team coordinating multi-camp
 ```
 reachy/
 ├── public/                      # Static assets (logo, favicon, icons)
+├── scripts/
+│   └── lighthouse.mjs           # Lighthouse audit runner (npm run lh)
 ├── src/
 │   ├── components/              # Shared UI components
 │   │   ├── AnimatedPage.tsx     # Page-level fade-in wrapper
@@ -166,6 +168,35 @@ The cron job runs every 60 seconds, invoking `dispatch-sends` to process one pen
 | `npm run lint` | Run oxlint |
 | `npm run preview` | Preview production build |
 | `npx tsc --noEmit` | Type-check only |
+| `npm run lh` | Lighthouse audit of the production build (auto-builds + serves, reports to `reports/lighthouse/`) |
+| `npm run lh:dev` | Lighthouse audit against the Vite dev server (spawns one if none is running) |
+| `npm run lh:desktop` | Lighthouse audit with desktop emulation |
+| `npm run lh:open` | Lighthouse audit, then open the HTML reports |
+
+### Lighthouse Audits
+
+`npm run lh` wraps the [Lighthouse Node CLI](https://github.com/GoogleChrome/lighthouse#using-the-node-cli) (`scripts/lighthouse.mjs`) and handles the whole loop locally:
+
+1. Downloads Chrome for Testing into `.lighthouse/chrome` on first run (cached afterwards; set `CHROME_PATH` to use your own Chrome).
+2. Runs `npm run build` and serves `dist/` with `vite preview` on port 4173 (reuses a server that's already up).
+3. Audits the public routes (`/` and `/login`) and writes `reports/lighthouse/*.report.html` (open these for the full report) plus `.report.json`.
+4. Prints a score/metric summary table.
+
+```bash
+npm run lh                                   # audit production build (recommended)
+npm run lh -- --open                         # open the HTML reports when done
+npm run lh -- --dev                          # audit the dev server (port 5173) instead
+npm run lh -- --desktop                      # desktop preset instead of mobile emulation
+npm run lh -- --no-build                     # reuse the existing dist/ (skips the build)
+npm run lh -- --categories=performance,seo   # subset of categories
+npm run lh -- --url=/login --url=https://<deploy-url>   # custom routes/URLs
+```
+
+Notes:
+
+- **Always compare production-build scores.** `--dev` audits are for spot-checking a change on a running dev server; unminified code and dev-only overhead make its scores far worse than production (not comparable).
+- **Protected routes** (`/dashboard`, etc.) redirect to `/login` when audited — the CLI can't inject the Supabase localStorage session. Public routes cover the landing/login critical path; audit deployed preview URLs with `--url=https://...` for the rest.
+- Reports and the Chrome download are gitignored.
 
 ## Architecture
 
