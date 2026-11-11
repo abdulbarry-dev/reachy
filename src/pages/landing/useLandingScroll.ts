@@ -43,15 +43,21 @@ const REVEAL_EASE = 'power3.out'
 const REVEAL_DURATION = 0.55
 const REVEAL_DISTANCE = 24
 
-/** Everything that fades and rises as one batch. */
-const REVEAL_SELECTORS = [
-  '.section-header .lp-badge',
-  '.section-header p',
-  '#features .feature-card',
-  '#playground .widget-container',
-  '#workflow .step-card',
-  '.split-text-col',
-]
+/**
+ * The motion contract. Markup opts in with a `data-motion` attribute; the hook
+ * never names a page section, a class or an id, so restructuring the page can
+ * never silently disable motion.
+ */
+const REVEAL_TARGET = '[data-motion="reveal"]'
+
+/** The band under the hero that is usually already on screen at load. */
+const ABOVE_FOLD_REVEAL_TARGET = '[data-motion="reveal-above-fold"]'
+
+/** Section headings that get split into masked lines. */
+const HEADING_TARGET = '[data-motion="heading"]'
+
+/** Cards that open out of a clipped inset. */
+const CURTAIN_TARGET = '[data-motion="curtain"]'
 
 export function useLandingScroll(
   rootRef: RefObject<HTMLElement | null>,
@@ -66,18 +72,17 @@ export function useLandingScroll(
 
       matchMedia.add(MOTION_OK, () => {
         trackReadingProgress(root, progressRef.current)
-        revealGroups(root, REVEAL_SELECTORS)
+        revealGroups(root, REVEAL_TARGET)
 
         // The trust strip sits just under the hero, so it is often already on
         // screen at load. A shallower start line lets it play immediately
         // instead of showing its label with the logos still hidden.
-        revealGroups(root, ['.logo-item'], TRUST_STRIP_REVEAL_START)
+        revealGroups(root, ABOVE_FOLD_REVEAL_TARGET, TRUST_STRIP_REVEAL_START)
 
         // SplitText owns DOM outside GSAP's context, so it is reverted by hand.
         const splits = maskRevealHeadings(root)
 
-        curtainReveal(root, '#deliverability .gauge-card')
-        curtainReveal(root, '.split-img-card')
+        curtainReveal(root)
 
         return () => splits.forEach((split) => split.revert())
       })
@@ -114,8 +119,8 @@ function trackReadingProgress(root: HTMLElement, progress: HTMLElement | null): 
  * Batches elements that share a reveal, so a row of cards staggers as one
  * gesture instead of each card starting its own timeline.
  */
-function revealGroups(root: HTMLElement, selectors: string[], start = REVEAL_START): void {
-  const targets = gsap.utils.toArray<HTMLElement>(selectors.join(','), root)
+function revealGroups(root: HTMLElement, selector: string, start = REVEAL_START): void {
+  const targets = gsap.utils.toArray<HTMLElement>(selector, root)
   if (targets.length === 0) return
 
   gsap.set(targets, { autoAlpha: 0, y: REVEAL_DISTANCE })
@@ -149,7 +154,7 @@ function revealGroups(root: HTMLElement, selectors: string[], start = REVEAL_STA
  * still rebuilds its tween, so one that is off-screen is never left stuck.
  */
 function maskRevealHeadings(root: HTMLElement): SplitText[] {
-  const headings = gsap.utils.toArray<HTMLElement>('.section-header h2', root)
+  const headings = gsap.utils.toArray<HTMLElement>(HEADING_TARGET, root)
   const revealed = new WeakSet<HTMLElement>()
 
   return headings.map((heading) =>
@@ -195,31 +200,32 @@ function curtainClip(inset: string, target: HTMLElement): string {
 }
 
 /**
- * Opens a card out of a clipped inset, keeping its own radius so the settled
- * card is indistinguishable from its static CSS state.
+ * Opens each marked card out of a clipped inset, keeping its own radius so the
+ * settled card is indistinguishable from its static CSS state.
  */
-function curtainReveal(root: HTMLElement, selector: string): void {
-  const target = root.querySelector<HTMLElement>(selector)
-  if (!target) return
+function curtainReveal(root: HTMLElement): void {
+  const targets = gsap.utils.toArray<HTMLElement>(CURTAIN_TARGET, root)
 
-  gsap.fromTo(
-    target,
-    {
-      autoAlpha: 0,
-      y: REVEAL_DISTANCE + 4,
-      clipPath: () => curtainClip('7% 6%', target),
-    },
-    {
-      autoAlpha: 1,
-      y: 0,
-      clipPath: () => curtainClip('0% 0%', target),
-      duration: 0.9,
-      ease: REVEAL_EASE,
-      scrollTrigger: {
-        trigger: target,
-        start: REVEAL_START,
-        once: true,
+  for (const target of targets) {
+    gsap.fromTo(
+      target,
+      {
+        autoAlpha: 0,
+        y: REVEAL_DISTANCE + 4,
+        clipPath: () => curtainClip('7% 6%', target),
       },
-    },
-  )
+      {
+        autoAlpha: 1,
+        y: 0,
+        clipPath: () => curtainClip('0% 0%', target),
+        duration: 0.9,
+        ease: REVEAL_EASE,
+        scrollTrigger: {
+          trigger: target,
+          start: REVEAL_START,
+          once: true,
+        },
+      },
+    )
+  }
 }

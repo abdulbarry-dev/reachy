@@ -60,6 +60,8 @@ type BatchVars = {
 let root: HTMLDivElement
 let heading: HTMLHeadingElement
 let card: HTMLDivElement
+let gauge: HTMLElement
+let splitCard: HTMLElement
 let progress: HTMLDivElement
 /** Cleanups returned from matchMedia.add callbacks, as GSAP would run them. */
 let mediaCleanups: Array<() => void>
@@ -85,20 +87,24 @@ beforeEach(() => {
 
   root = document.createElement('div')
   root.innerHTML = [
-    '<section id="deliverability"><div class="gauge-card"></div></section>',
-    '<div class="split-img-card"></div>',
+    '<section id="deliverability"><div class="gauge-card" data-motion="curtain"></div></section>',
+    '<div class="split-img-card" data-motion="curtain"></div>',
   ].join('')
   heading = document.createElement('h2')
   card = document.createElement('div')
   progress = document.createElement('div')
   root.append(heading, card)
   document.body.append(root)
+  gauge = root.querySelector('.gauge-card') as HTMLElement
+  splitCard = root.querySelector('.split-img-card') as HTMLElement
 
-  // Heading queries return the heading; every other batch query returns a card,
-  // so batch assertions stay independent of the selector list itself.
-  mocks.gsap.utils.toArray.mockImplementation((selector: string) =>
-    selector === '.section-header h2' ? [heading] : [card],
-  )
+  // The hook resolves targets by the data-motion contract, never by section
+  // markup, so the harness only has to answer those queries.
+  mocks.gsap.utils.toArray.mockImplementation((selector: string) => {
+    if (selector === '[data-motion="heading"]') return [heading]
+    if (selector === '[data-motion="curtain"]') return [gauge, splitCard]
+    return [card]
+  })
   mocks.gsap.matchMedia.mockImplementation(() => ({
     add: (_conditions: unknown, callback: () => (() => void) | void) => {
       const cleanup = callback()

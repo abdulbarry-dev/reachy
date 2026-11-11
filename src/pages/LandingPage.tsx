@@ -155,7 +155,7 @@ export function LandingPage() {
               { icon: 'bi-cpu-fill text-warning', label: 'Deno Edge Runtime', code: null },
               { icon: 'bi-clock-history text-success', label: 'Scheduling', code: 'pg_cron' },
             ].map((item) => (
-              <div key={item.label} className="logo-item">
+              <div key={item.label} className="logo-item" data-motion="reveal-above-fold">
                 <i className={`bi ${item.icon}`} />
                 {item.code ? (
                   <>
@@ -174,9 +174,9 @@ export function LandingPage() {
       <section id="features" className="lp-section">
         <Container>
           <div className="section-header text-center">
-            <span className="lp-badge mb-2">Features Suite</span>
-            <h2>Designed to Prevent Spam Triggers</h2>
-            <p className="text-muted">
+            <span className="lp-badge mb-2" data-motion="reveal">Features Suite</span>
+            <h2 data-motion="heading">Designed to Prevent Spam Triggers</h2>
+            <p className="text-muted" data-motion="reveal">
               Unlike generic bulk mail tools, Reachy structures every aspect of the send pipeline
               around Gmail security principles.
             </p>
@@ -207,7 +207,7 @@ export function LandingPage() {
               },
             ].map((card) => (
               <Col md={4} key={card.title}>
-                <div className="feature-card">
+                <div className="feature-card" data-motion="reveal">
                   <div className="feature-badge">{card.badge}</div>
                   <div className="feature-icon-box">
                     <i className={`bi ${card.icon}`} />
@@ -253,15 +253,15 @@ export function LandingPage() {
       >
         <Container>
           <div className="section-header text-center">
-            <span className="lp-badge mb-2">Live Playground</span>
-            <h2>Personalize Templates Live</h2>
-            <p className="text-muted">
+            <span className="lp-badge mb-2" data-motion="reveal">Live Playground</span>
+            <h2 data-motion="heading">Personalize Templates Live</h2>
+            <p className="text-muted" data-motion="reveal">
               Type custom templates, click variables to insert tags, and toggle between target
               prospects to see personalized text instantly.
             </p>
           </div>
 
-          <div className="widget-container">
+          <div className="widget-container" data-motion="reveal">
             <Row className="g-4">
               <Col lg={6}>
                 <div className="pe-lg-3">
@@ -365,9 +365,9 @@ export function LandingPage() {
       <section id="workflow" className="lp-section">
         <Container>
           <div className="section-header text-center">
-            <span className="lp-badge mb-2">Simple Setup</span>
-            <h2>How Reachy Automated Outbound</h2>
-            <p className="text-muted">
+            <span className="lp-badge mb-2" data-motion="reveal">Simple Setup</span>
+            <h2 data-motion="heading">How Reachy Automated Outbound</h2>
+            <p className="text-muted" data-motion="reveal">
               Get running in minutes. Our architecture ensures your cold email campaign stays within
               parameters.
             </p>
@@ -398,7 +398,10 @@ export function LandingPage() {
               },
             ].map((step) => (
               <Col lg={4} key={step.num}>
-                <div className={`step-card ${step.highlighted ? 'highlighted' : ''}`}>
+                <div
+                  className={`step-card ${step.highlighted ? 'highlighted' : ''}`}
+                  data-motion="reveal"
+                >
                   <div className="step-num-badge">{step.num}</div>
                   <h4
                     className={`step-title fw-bold mb-3 ${step.highlighted ? 'text-white' : 'text-dark'}`}
@@ -420,16 +423,16 @@ export function LandingPage() {
       <section id="deliverability" className="lp-section lp-section-tint">
         <Container>
           <div className="section-header text-center">
-            <span className="lp-badge mb-2">Deliverability Advisor</span>
-            <h2>Adjust Sending Speed Safely</h2>
-            <p className="text-muted">
+            <span className="lp-badge mb-2" data-motion="reveal">Deliverability Advisor</span>
+            <h2 data-motion="heading">Adjust Sending Speed Safely</h2>
+            <p className="text-muted" data-motion="reveal">
               Gmail limits and thresholds are behavioral. Slide daily sends to analyze risk factors.
             </p>
           </div>
 
           <Row className="justify-content-center">
             <Col lg={8}>
-              <div className="gauge-card">
+              <div className="gauge-card" data-motion="curtain">
                 <div className="gauge-cosmos" aria-hidden="true">
                   <StarfieldCanvas className="gauge-stars" starCount={70} />
                   <div className="gauge-aurora gauge-aurora-1" />
@@ -504,7 +507,7 @@ export function LandingPage() {
         <Container>
           <Row className="align-items-center g-5">
             <Col lg={5}>
-              <div className="split-img-card">
+              <div className="split-img-card" data-motion="curtain">
                 <img src="/reachy-logo.png" alt="Reachy logo branding" />
                 <div className="split-overlay-tag">
                   <span style={{ fontSize: '1.35rem' }}>90 / day</span>
@@ -514,7 +517,7 @@ export function LandingPage() {
             </Col>
 
             <Col lg={7}>
-              <div className="split-text-col">
+              <div className="split-text-col" data-motion="reveal">
                 <span className="lp-badge mb-3">Branding &amp; Philosophy</span>
                 <h2 className="display-6 fw-bold mb-4 text-dark">Crafted for Clean Outreach</h2>
                 <p className="text-muted mb-4">
