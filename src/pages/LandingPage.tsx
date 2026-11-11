@@ -26,7 +26,9 @@ import './LandingPage.css'
  * section never requires touching this file's animation code.
  */
 export function LandingPage() {
-  const { user } = useSelector((state: RootState) => state.auth)
+  // Select the user only: `loading` changes during session restore and would
+  // otherwise re-render the whole landing tree for a value nothing here reads.
+  const user = useSelector((state: RootState) => state.auth.user)
   const [activeSection, setActiveSection] = useState('')
   const landingRef = useRef<HTMLDivElement>(null)
   const progressBarRef = useRef<HTMLDivElement>(null)

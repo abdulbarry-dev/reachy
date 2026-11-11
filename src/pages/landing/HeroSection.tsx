@@ -8,6 +8,7 @@ import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion'
 import { gsap, SplitText, useGSAP } from '../../lib/gsap'
 import { StarfieldCanvas } from './StarfieldCanvas'
 import { EASE_OUT_EXPO } from './landingMotion'
+import { useCounter } from './useCounter'
 import './landingHero.css'
 
 // ─── Hero mock data ──────────────────────────────────────────────────────────
@@ -31,26 +32,12 @@ function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-// ─── Animated Counter Hook ───────────────────────────────────────────────────
-
-function useCounter(target: number, duration = 1400, started = false) {
-  const [value, setValue] = useState(0)
-  useEffect(() => {
-    if (!started) return
-    let startTime: number | null = null
-    let raf: number
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp
-      const progress = Math.min((timestamp - startTime) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setValue(Math.floor(eased * target))
-      if (progress < 1) raf = requestAnimationFrame(step)
-    }
-    raf = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(raf)
-  }, [target, duration, started])
-  return value
-}
+/**
+ * Counter formatters live at module scope so their identity is stable: a new
+ * function on every render would restart the animation mid-flight.
+ */
+const formatInteger = (value: number) => String(value)
+const formatPercentTenths = (value: number) => `${(value / 10).toFixed(1)}%`
 
 // ─── Tilt Hook (cursor tracking, disabled under reduced motion) ──────────────
 
@@ -100,9 +87,9 @@ export function HeroSection() {
   const heroRef = useRef<HTMLDivElement>(null)
 
   const { ref: tiltRef, rotateX, rotateY } = useTilt()
-  const countSent = useCounter(142, 1200, heroVisible)
-  const countReply = useCounter(246, 1400, heroVisible) // stored as int, displayed as /10 = 24.6%
-  const countInbox = useCounter(992, 1600, heroVisible) // /10 = 99.2%
+  const sentRef = useCounter(142, 1200, heroVisible, formatInteger)
+  const replyRef = useCounter(246, 1400, heroVisible, formatPercentTenths)
+  const inboxRef = useCounter(992, 1600, heroVisible, formatPercentTenths)
 
   // ── Hero visibility (counters) ──
   useEffect(() => {
@@ -208,27 +195,71 @@ export function HeroSection() {
             depth
           }))
 
-          const onMove = (e: PointerEvent) => {
-            const rect = card.getBoundingClientRect()
-            const nx = (e.clientX - rect.left) / rect.width - 0.5
-            const ny = (e.clientY - rect.top) / rect.height - 0.5
+          // A trackpad emits pointermove well above frame rate, and a burst
+          // used to mean one layout read plus four tween writes per event.
+          // Coalesce into one frame: measure once per burst, apply the latest
+          // position only.
+          let frame = 0
+          let pending: { x: number; y: number } | null = null
+          let rect: DOMRect | null = null
+          let rectDirty = true
+
+          const stageRect = () => {
+            if (!rect || rectDirty) {
+              rect = card.getBoundingClientRect()
+              rectDirty = false
+            }
+            return rect
+          }
+
+          const flush = () => {
+            frame = 0
+            const point = pending
+            pending = null
+            if (!point) return
+
+            const bounds = stageRect()
+            const nx = (point.x - bounds.left) / bounds.width - 0.5
+            const ny = (point.y - bounds.top) / bounds.height - 0.5
             for (const mover of movers) {
               mover.toX(nx * mover.depth * 2)
               mover.toY(ny * mover.depth)
             }
           }
+
+          const onMove = (event: PointerEvent) => {
+            pending = { x: event.clientX, y: event.clientY }
+            if (frame === 0) frame = requestAnimationFrame(flush)
+          }
           const onLeave = () => {
+            pending = null
+            if (frame !== 0) {
+              cancelAnimationFrame(frame)
+              frame = 0
+            }
             for (const mover of movers) {
               mover.toX(0)
               mover.toY(0)
             }
           }
 
+          // Scrolling and resizing move the stage under the pointer, so the
+          // cached rect is invalidated rather than re-measured per event.
+          const invalidateRect = () => {
+            rectDirty = true
+          }
+
           card.addEventListener('pointermove', onMove)
           card.addEventListener('pointerleave', onLeave)
+          window.addEventListener('resize', invalidateRect)
+          window.addEventListener('scroll', invalidateRect, { passive: true })
+
           cleanups.push(() => {
             card.removeEventListener('pointermove', onMove)
             card.removeEventListener('pointerleave', onLeave)
+            window.removeEventListener('resize', invalidateRect)
+            window.removeEventListener('scroll', invalidateRect)
+            if (frame !== 0) cancelAnimationFrame(frame)
           })
           return () => cleanups.forEach((fn) => fn())
         }
@@ -320,19 +351,19 @@ export function HeroSection() {
                           <div className="col-4">
                             <div className="bg-light p-2 rounded border border-light-subtle">
                               <div className="text-muted small">Sent</div>
-                              <strong className="text-dark">{countSent}</strong>
+                              <strong className="text-dark" ref={sentRef} />
                             </div>
                           </div>
                           <div className="col-4">
                             <div className="bg-light p-2 rounded border border-light-subtle">
                               <div className="text-muted small">Replies</div>
-                              <strong className="text-success">{(countReply / 10).toFixed(1)}%</strong>
+                              <strong className="text-success" ref={replyRef} />
                             </div>
                           </div>
                           <div className="col-4">
                             <div className="bg-light p-2 rounded border border-light-subtle">
                               <div className="text-muted small">Inbox Pl.</div>
-                              <strong className="text-gradient">{(countInbox / 10).toFixed(1)}%</strong>
+                              <strong className="text-gradient" ref={inboxRef} />
                             </div>
                           </div>
                         </div>

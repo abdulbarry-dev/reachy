@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Col, Container, Form, Row } from 'react-bootstrap'
 
 interface MockRecipient {
@@ -23,6 +23,8 @@ export function PlaygroundSection() {
   const [templateText, setTemplateText] = useState(DEFAULT_TEMPLATE)
   const [selectedRecipientIdx, setSelectedRecipientIdx] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  /** Caret to restore once React has committed the new template text. */
+  const pendingCaretRef = useRef<number | null>(null)
 
   const recipient = MOCK_RECIPIENTS[selectedRecipientIdx]
 
@@ -33,13 +35,23 @@ export function PlaygroundSection() {
     const end = textarea.selectionEnd
     const text = textarea.value
     const updatedText = text.substring(0, start) + `{{${variable}}}` + text.substring(end)
+    pendingCaretRef.current = start + variable.length + 4
     setTemplateText(updatedText)
-    setTimeout(() => {
-      textarea.focus()
-      const pos = start + variable.length + 4
-      textarea.setSelectionRange(pos, pos)
-    }, 50)
   }
+
+  // Moving the caret has to wait until the new value is in the DOM. Doing it
+  // in a timeout made the caret jump twice and left a timer alive per click;
+  // a layout effect runs after the commit and before paint.
+  useLayoutEffect(() => {
+    const caret = pendingCaretRef.current
+    if (caret === null) return
+    pendingCaretRef.current = null
+
+    const textarea = textareaRef.current
+    if (!textarea) return
+    textarea.focus()
+    textarea.setSelectionRange(caret, caret)
+  }, [templateText])
 
   const renderedPreview = templateText
     .replaceAll('{{first_name}}', recipient.first_name)
@@ -83,7 +95,7 @@ export function PlaygroundSection() {
                   ))}
                 </div>
 
-                <Form.Group className="mb-3">
+                <Form.Group className="mb-3" controlId="playground-template">
                   <Form.Label className="fw-bold small text-uppercase text-secondary">
                     2. Compose Email Content
                   </Form.Label>
