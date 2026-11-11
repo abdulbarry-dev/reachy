@@ -4,18 +4,20 @@ import type { ImportedRecipient } from '../types'
 
 interface RecipientRowProps {
   recipient: ImportedRecipient
-  index: number
   selected: boolean
-  onToggle: (email: string) => void
-  onEdit: (email: string) => void
-  onDelete: (email: string) => void
-  onExportJson: (index: number) => void
-  onExportCsv: (index: number) => void
+  onToggle: (recipient: ImportedRecipient) => void
+  onEdit: (recipient: ImportedRecipient) => void
+  onDelete: (recipient: ImportedRecipient) => void
+  onExportJson: (recipient: ImportedRecipient) => void
+  onExportCsv: (recipient: ImportedRecipient) => void
 }
 
+/**
+ * Every callback receives the recipient itself rather than its position, so the
+ * parent can pass stable functions and this memo can skip untouched rows.
+ */
 export const RecipientRow = memo(function RecipientRow({
   recipient,
-  index,
   selected,
   onToggle,
   onEdit,
@@ -23,11 +25,11 @@ export const RecipientRow = memo(function RecipientRow({
   onExportJson,
   onExportCsv,
 }: RecipientRowProps) {
-  const handleToggle = useCallback(() => onToggle(recipient.email), [onToggle, recipient.email])
-  const handleEdit = useCallback(() => onEdit(recipient.email), [onEdit, recipient.email])
-  const handleDelete = useCallback(() => onDelete(recipient.email), [onDelete, recipient.email])
-  const handleExportJson = useCallback(() => onExportJson(index), [onExportJson, index])
-  const handleExportCsv = useCallback(() => onExportCsv(index), [onExportCsv, index])
+  const handleToggle = useCallback(() => onToggle(recipient), [onToggle, recipient])
+  const handleEdit = useCallback(() => onEdit(recipient), [onEdit, recipient])
+  const handleDelete = useCallback(() => onDelete(recipient), [onDelete, recipient])
+  const handleExportJson = useCallback(() => onExportJson(recipient), [onExportJson, recipient])
+  const handleExportCsv = useCallback(() => onExportCsv(recipient), [onExportCsv, recipient])
 
   return (
     <tr>

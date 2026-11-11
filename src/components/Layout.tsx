@@ -1,18 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { Container, Stack } from 'react-bootstrap'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
 import { signOut } from '../store/authSlice'
 import { useToast } from '../hooks/useToast'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { ConfirmModal } from './ConfirmModal'
 import { BrandLogo } from './BrandLogo'
 import type { RootState, AppDispatch } from '../store'
 
 const SIDEBAR_EXPANDED = 260
 const SIDEBAR_COLLAPSED = 72
-
-const BREAKPOINT = 768
 
 const mainLinks = [
   { to: '/dashboard', label: 'Dashboard', icon: 'bi-speedometer2', end: true },
@@ -29,19 +28,14 @@ export function Layout() {
   const { toast } = useToast()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < BREAKPOINT)
+  // A drawer only exists on mobile: growing past the breakpoint closes it, so
+  // returning to a narrow viewport starts closed again.
+  const closeDrawerOnDesktop = useCallback((mobile: boolean) => {
+    if (!mobile) setMobileOpen(false)
+  }, [])
+  const isMobile = useIsMobile(closeDrawerOnDesktop)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
-
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < BREAKPOINT
-      setIsMobile(mobile)
-      if (!mobile) setMobileOpen(false)
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
   const closeMobile = () => {
     if (isMobile) setMobileOpen(false)

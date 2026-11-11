@@ -1,4 +1,4 @@
-import { createContext, useState, useCallback, useRef, type ReactNode } from 'react'
+import { createContext, useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { gsap } from 'gsap'
 import { useGSAP } from '@gsap/react'
 
@@ -205,12 +205,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  if (typeof window !== 'undefined' && import.meta.env.DEV) {
-    ;(window as unknown as { __reachyToast?: typeof addToast }).__reachyToast = addToast
-  }
+  // One object for the lifetime of the provider: consumers of `useToast` only
+  // re-render when the toast function itself changes, which it never does.
+  const contextValue = useMemo<ToastContextValue>(() => ({ toast: addToast }), [addToast])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    const w = window as unknown as { __reachyToast?: typeof addToast }
+    w.__reachyToast = addToast
+    return () => {
+      if (w.__reachyToast === addToast) delete w.__reachyToast
+    }
+  }, [addToast])
 
   return (
-    <ToastContext.Provider value={{ toast: addToast }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       <div
         className="toast-reachy-container"

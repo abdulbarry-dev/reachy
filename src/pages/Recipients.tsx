@@ -52,7 +52,8 @@ export function Recipients() {
     })
   }, [recipients])
 
-  const toggleOne = useCallback((email: string) => {
+  const toggleOne = useCallback((recipient: ImportedRecipient) => {
+    const email = recipient.email
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(email)) next.delete(email)
@@ -61,13 +62,15 @@ export function Recipients() {
     })
   }, [])
 
-  const openEdit = useCallback((email: string) => {
-    const recipient = recipients.find((r) => r.email.toLowerCase() === email.toLowerCase())
-    if (!recipient) return
-    setEditTarget(email)
+  const openEdit = useCallback((recipient: ImportedRecipient) => {
+    setEditTarget(recipient.email)
     setEditName(recipient.name ?? '')
     setEditCompany(recipient.company ?? '')
-  }, [recipients])
+  }, [])
+
+  const requestDelete = useCallback((recipient: ImportedRecipient) => {
+    setDeleteTarget(recipient.email)
+  }, [])
 
   const handleSaveEdit = useCallback(() => {
     if (editTarget !== null) {
@@ -106,11 +109,11 @@ export function Recipients() {
 
   const exportAllCsv = useCallback(() => downloadText('recipients.csv', recipientsToCsv(recipients), 'text/csv'), [recipients])
 
-  const exportSingleJson = useCallback((i: number) =>
-    downloadText(`recipient-${recipients[i].email}.json`, JSON.stringify([recipients[i]], null, 2), 'application/json'), [recipients])
+  const exportSingleJson = useCallback((recipient: ImportedRecipient) =>
+    downloadText(`recipient-${recipient.email}.json`, JSON.stringify([recipient], null, 2), 'application/json'), [])
 
-  const exportSingleCsv = useCallback((i: number) =>
-    downloadText(`recipient-${recipients[i].email}.csv`, recipientsToCsv([recipients[i]]), 'text/csv'), [recipients])
+  const exportSingleCsv = useCallback((recipient: ImportedRecipient) =>
+    downloadText(`recipient-${recipient.email}.csv`, recipientsToCsv([recipient]), 'text/csv'), [])
 
   const handleDownloadTemplate = useCallback(async (format: 'csv' | 'xlsx') => {
     setDownloading(true)
@@ -166,7 +169,7 @@ export function Recipients() {
         onToggleAll={toggleAll}
         onToggleOne={toggleOne}
         onEdit={openEdit}
-        onDelete={setDeleteTarget}
+        onDelete={requestDelete}
         onExportJson={exportSingleJson}
         onExportCsv={exportSingleCsv}
         onExportAllJson={exportAllJson}

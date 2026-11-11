@@ -2,15 +2,12 @@ import { Button, Card, Col, Row, Table } from 'react-bootstrap'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { useRecipients } from '../hooks/useRecipients'
-import { useCampaigns } from '../hooks/useCampaigns'
-import { useEffect, useState } from 'react'
+import { useCampaigns, RUNNING_REFRESH_MS } from '../hooks/useCampaigns'
+import { useState } from 'react'
 import { useToast } from '../hooks/useToast'
 import { SkeletonTable } from '../components/Skeleton'
 import { invokeEdgeFunction } from '../lib/edge-functions'
 import { campaignStatusBadgeClass } from '../lib/campaignStatus'
-
-/** While a campaign is running, keep counts and recipient rows fresh. */
-const RUNNING_REFRESH_MS = 30_000
 
 const recipientBadgeClass: Record<string, string> = {
   pending: 'badge-reachy-draft',
@@ -23,23 +20,18 @@ export function CampaignDetail() {
   const { campaignId } = useParams<{ campaignId: string }>()
   const navigate = useNavigate()
   const { campaigns, loading: campaignsLoading, refetch: refetchCampaigns } = useCampaigns()
-  const { recipients, loading: recipientsLoading, error, refetch } = useRecipients(campaignId)
   const { toast } = useToast()
   const [starting, setStarting] = useState(false)
 
   const campaign = campaigns.find((c) => c.id === campaignId)
   const isRunning = campaign?.status === 'running'
 
-  // Poll while the campaign is actively sending; stops automatically once the
-  // status flips (the campaigns refetch updates `campaign`, clearing the effect).
-  useEffect(() => {
-    if (!isRunning) return
-    const interval = setInterval(() => {
-      refetch()
-      refetchCampaigns()
-    }, RUNNING_REFRESH_MS)
-    return () => clearInterval(interval)
-  }, [isRunning, refetch, refetchCampaigns])
+  // While the campaign sends, SWR refreshes the rows on its own; the campaigns
+  // list polls itself (see campaignPollInterval) so the status and counts follow.
+  const { recipients, loading: recipientsLoading, error, refetch } = useRecipients(
+    campaignId,
+    isRunning ? RUNNING_REFRESH_MS : 0,
+  )
 
   const handleStart = async () => {
     if (!campaignId) return

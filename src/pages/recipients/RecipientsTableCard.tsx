@@ -7,11 +7,11 @@ interface RecipientsTableCardProps {
   recipients: ImportedRecipient[]
   selected: Set<string>
   onToggleAll: () => void
-  onToggleOne: (email: string) => void
-  onEdit: (email: string) => void
-  onDelete: (email: string) => void
-  onExportJson: (index: number) => void
-  onExportCsv: (index: number) => void
+  onToggleOne: (recipient: ImportedRecipient) => void
+  onEdit: (recipient: ImportedRecipient) => void
+  onDelete: (recipient: ImportedRecipient) => void
+  onExportJson: (recipient: ImportedRecipient) => void
+  onExportCsv: (recipient: ImportedRecipient) => void
   onExportAllJson: () => void
   onExportAllCsv: () => void
   onRequestBulkDelete: () => void
@@ -108,11 +108,10 @@ export function RecipientsTableCard({
                 </tr>
               </thead>
               <tbody>
-                {recipients.map((r, i) => (
+                {recipients.map((r) => (
                   <RecipientRow
-                    key={`${r.email}-${i}`}
+                    key={r.email}
                     recipient={r}
-                    index={i}
                     selected={selected.has(r.email)}
                     onToggle={onToggleOne}
                     onEdit={onEdit}

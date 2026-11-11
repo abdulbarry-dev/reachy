@@ -5,12 +5,17 @@ import type { Recipient } from '../types'
 /** Stable empty list: `data ?? []` would change identity on every render. */
 const NO_RECIPIENTS: Recipient[] = []
 
-export function useRecipients(campaignId: string | undefined) {
+/**
+ * @param refreshInterval Poll interval in ms; 0 disables polling. The caller
+ * decides, because only it knows whether the campaign is still sending.
+ */
+export function useRecipients(campaignId: string | undefined, refreshInterval = 0) {
   // Campaign ids are globally unique, so the key needs no user segment; RLS
   // refuses the rows for anyone who does not own the campaign.
   const { data, error, isLoading, mutate } = useSWR<Recipient[]>(
     campaignId ? (['recipients', campaignId] as const) : null,
     ([, id]: readonly [string, string]) => fetchCampaignRecipients(id),
+    { refreshInterval },
   )
 
   return {
