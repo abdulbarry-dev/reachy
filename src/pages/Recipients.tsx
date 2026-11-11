@@ -1,38 +1,26 @@
 import { useState, useCallback } from 'react'
-import { Alert, Button, Card, Col, Form, Modal, Row, Table } from 'react-bootstrap'
+import { Alert, Row } from 'react-bootstrap'
 import { useDispatch, useSelector } from 'react-redux'
 import { addRecipient, addRecipients, clearRecipients, removeRecipients, updateRecipient } from '../store/recipientsSlice'
 import { PageHeader } from '../components/PageHeader'
-import { SectionHeader } from '../components/SectionHeader'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { ConfirmModal } from '../components/ConfirmModal'
-import { FileDropzone } from '../components/FileDropzone'
-import { RecipientRow } from '../components/RecipientRow'
 import { useToast } from '../hooks/useToast'
 import { recipientsToCsv } from '../utils/fileParsers'
 import { generateTemplate } from '../utils/templateGenerator'
+import { downloadBlob, downloadText } from '../utils/download'
+import { ImportFromFileCard } from './recipients/ImportFromFileCard'
+import { AddRecipientCard } from './recipients/AddRecipientCard'
+import { RecipientsTableCard } from './recipients/RecipientsTableCard'
+import { EditRecipientModal } from './recipients/EditRecipientModal'
 import type { RootState, AppDispatch } from '../store'
 import type { ImportedRecipient } from '../types'
-
-function download(filename: string, content: string, type: string) {
-  const blob = new Blob([content], { type })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
 
 export function Recipients() {
   const dispatch = useDispatch<AppDispatch>()
   const recipients = useSelector((state: RootState) => state.recipients.items)
   const { toast } = useToast()
 
-  const [email, setEmail] = useState('')
-  const [emailError, setEmailError] = useState('')
-  const [name, setName] = useState('')
-  const [company, setCompany] = useState('')
   const [addedCount, setAddedCount] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
@@ -52,20 +40,10 @@ export function Recipients() {
     setAddedCount(parsed.length)
   }
 
-  const handleManualAdd = (e: React.FormEvent) => {
-    e.preventDefault()
-    const normalized = email.trim().toLowerCase()
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-      setEmailError('Enter a valid email address, e.g. contact@company.com')
-      return
-    }
-
-    dispatch(addRecipient({ email: normalized, name: name.trim() || undefined, company: company.trim() || undefined }))
-    setEmailError('')
-    setEmail('')
-    setName('')
-    setCompany('')
-  }
+  const handleManualAdd = useCallback(
+    (recipient: Omit<ImportedRecipient, 'id'>) => dispatch(addRecipient(recipient)),
+    [dispatch],
+  )
 
   const toggleAll = useCallback(() => {
     setSelected((prev) => {
@@ -124,27 +102,21 @@ export function Recipients() {
     toast(`All ${count} recipients cleared`, 'success')
   }, [recipients.length, dispatch, toast])
 
-  const exportAllJson = useCallback(() => download('recipients.json', JSON.stringify(recipients, null, 2), 'application/json'), [recipients])
+  const exportAllJson = useCallback(() => downloadText('recipients.json', JSON.stringify(recipients, null, 2), 'application/json'), [recipients])
 
-  const exportAllCsv = useCallback(() => download('recipients.csv', recipientsToCsv(recipients), 'text/csv'), [recipients])
+  const exportAllCsv = useCallback(() => downloadText('recipients.csv', recipientsToCsv(recipients), 'text/csv'), [recipients])
 
   const exportSingleJson = useCallback((i: number) =>
-    download(`recipient-${recipients[i].email}.json`, JSON.stringify([recipients[i]], null, 2), 'application/json'), [recipients])
+    downloadText(`recipient-${recipients[i].email}.json`, JSON.stringify([recipients[i]], null, 2), 'application/json'), [recipients])
 
   const exportSingleCsv = useCallback((i: number) =>
-    download(`recipient-${recipients[i].email}.csv`, recipientsToCsv([recipients[i]]), 'text/csv'), [recipients])
+    downloadText(`recipient-${recipients[i].email}.csv`, recipientsToCsv([recipients[i]]), 'text/csv'), [recipients])
 
   const handleDownloadTemplate = useCallback(async (format: 'csv' | 'xlsx') => {
     setDownloading(true)
     try {
       const blob = await generateTemplate(recipients, format)
-      const filename = `recipients-template.${format}`
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = filename
-      a.click()
-      URL.revokeObjectURL(url)
+      downloadBlob(`recipients-template.${format}`, blob)
     } catch {
       toast('Failed to generate template. Please try again.', 'error')
     } finally {
@@ -154,7 +126,6 @@ export function Recipients() {
 
   return (
     <AnimatedPage>
-      {/* Page header */}
       <PageHeader
         title="Recipients"
         description="Import contacts from files. These will be available when you create a campaign."
@@ -180,285 +151,40 @@ export function Recipients() {
 
       <div>
         <Row className="g-4 mb-4">
-          <Col lg={7} className="min-w-0">
-            <div className="h-100 min-w-0">
-              <Card className="card-reachy border-0 h-100">
-                <Card.Body className="p-4 d-flex flex-column">
-                  <SectionHeader
-                    icon="bi-cloud-arrow-up"
-                    title="Import from file"
-                    description="JSON, CSV, or Excel"
-                    className="mb-4"
-                  />
-                  <FileDropzone onUpload={handleUpload} />
-                  <div className="d-flex align-items-center gap-2 mt-3 pt-2 border-top">
-                    <span className="small text-muted me-1">Need a template?</span>
-                    <button
-                      type="button"
-                      className="btn-reachy-outline btn-reachy-sm gap-1"
-                      onClick={() => handleDownloadTemplate('csv')}
-                      disabled={downloading}
-                    >
-                      <i className="bi bi-filetype-csv"></i>
-                      CSV
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-reachy-outline btn-reachy-sm gap-1"
-                      onClick={() => handleDownloadTemplate('xlsx')}
-                      disabled={downloading}
-                    >
-                      {downloading ? (
-                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                      ) : (
-                        <i className="bi bi-file-earmark-excel"></i>
-                      )}
-                      Excel
-                    </button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </div>
-          </Col>
-
-          <Col lg={5} className="min-w-0">
-            <div className="h-100 min-w-0">
-              <Card className="card-reachy border-0 h-100">
-                <Card.Body className="p-4 d-flex flex-column">
-                  <SectionHeader
-                    icon="bi-person-plus"
-                    title="Add manually"
-                    description="One recipient at a time"
-                    className="mb-4"
-                  />
-                  <Form onSubmit={handleManualAdd} className="flex-grow-1 d-flex flex-column">
-                    <div className="field">
-                      <Form.Label className="form-label-reachy" htmlFor="recip-email">Email address</Form.Label>
-                      <Form.Control
-                        id="recip-email"
-                        type="email"
-                        inputMode="email"
-                        autoComplete="email"
-                        placeholder="contact@company.com"
-                        className="form-control-reachy"
-                        value={email}
-                        onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError('') }}
-                        aria-invalid={emailError !== ''}
-                        aria-describedby={emailError ? 'recip-email-error' : undefined}
-                        required
-                      />
-                      {emailError && (
-                        <div id="recip-email-error" className="form-error-reachy mt-2 mb-0" role="alert">
-                          <i className="bi bi-exclamation-circle" aria-hidden="true"></i>
-                          <span>{emailError}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="field">
-                      <Form.Label className="form-label-reachy" htmlFor="recip-name">Name</Form.Label>
-                      <Form.Control
-                        id="recip-name"
-                        type="text"
-                        inputMode="text"
-                        autoComplete="name"
-                        placeholder="Jane Doe"
-                        className="form-control-reachy"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                      />
-                    </div>
-                    <div className="field">
-                      <Form.Label className="form-label-reachy" htmlFor="recip-company">Company</Form.Label>
-                      <Form.Control
-                        id="recip-company"
-                        type="text"
-                        inputMode="text"
-                        autoComplete="organization"
-                        placeholder="Acme Inc."
-                        className="form-control-reachy"
-                        value={company}
-                        onChange={(e) => setCompany(e.target.value)}
-                      />
-                    </div>
-                    <button type="submit" className="btn-submit-reachy mt-auto">
-                      <i className="bi bi-plus-lg"></i>
-                      Add recipient
-                    </button>
-                  </Form>
-                </Card.Body>
-              </Card>
-            </div>
-          </Col>
+          <ImportFromFileCard
+            onUpload={handleUpload}
+            onDownloadTemplate={handleDownloadTemplate}
+            downloading={downloading}
+          />
+          <AddRecipientCard onAdd={handleManualAdd} />
         </Row>
       </div>
 
-      {/* Recipients list */}
-      <div>
-        <Card className="card-reachy border-0">
-          <Card.Body className="p-4">
-            {/* Toolbar */}
-            <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-              <SectionHeader
-                icon="bi-list-ul"
-                title="Recipients list"
-                description={`${recipients.length} ${recipients.length === 1 ? 'contact' : 'contacts'}`}
-              />
-              <div className="d-flex gap-2 flex-wrap toolbar-actions">
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  className="btn-reachy-outline btn-reachy-sm gap-1"
-                  onClick={exportAllJson}
-                  disabled={recipients.length === 0}
-                >
-                  <i className="bi bi-download"></i>
-                  JSON
-                </Button>
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  className="btn-reachy-outline btn-reachy-sm gap-1"
-                  onClick={exportAllCsv}
-                  disabled={recipients.length === 0}
-                >
-                  <i className="bi bi-filetype-csv"></i>
-                  CSV
-                </Button>
-                {selected.size > 0 && (
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    className="btn-reachy-danger btn-reachy-sm gap-1"
-                    onClick={() => setBulkDelete(true)}
-                  >
-                    <i className="bi bi-trash"></i>
-                    Delete ({selected.size})
-                  </Button>
-                )}
-                <Button
-                  variant="outline-danger"
-                  size="sm"
-                  className="btn-reachy-danger btn-reachy-sm gap-1"
-                  onClick={() => setClearAll(true)}
-                  disabled={recipients.length === 0}
-                >
-                  <i className="bi bi-trash3"></i>
-                  Clear all
-                </Button>
-              </div>
-            </div>
+      <RecipientsTableCard
+        recipients={recipients}
+        selected={selected}
+        onToggleAll={toggleAll}
+        onToggleOne={toggleOne}
+        onEdit={openEdit}
+        onDelete={setDeleteTarget}
+        onExportJson={exportSingleJson}
+        onExportCsv={exportSingleCsv}
+        onExportAllJson={exportAllJson}
+        onExportAllCsv={exportAllCsv}
+        onRequestBulkDelete={() => setBulkDelete(true)}
+        onRequestClearAll={() => setClearAll(true)}
+      />
 
-            {/* Table */}
-            <div className="table-responsive">
-              <Table hover className="table-reachy mb-0 align-middle">
-                <thead>
-                  <tr>
-                    <th className="col-check">
-                      <Form.Check
-                        checked={recipients.length > 0 && selected.size === recipients.length}
-                        onChange={toggleAll}
-                        aria-label="Select all"
-                      />
-                    </th>
-                    <th>Email</th>
-                    <th className="col-name">Name</th>
-                    <th className="col-company">Company</th>
-                    <th className="col-actions text-end pe-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recipients.map((r, i) => (
-                    <RecipientRow
-                      key={`${r.email}-${i}`}
-                      recipient={r}
-                      index={i}
-                      selected={selected.has(r.email)}
-                      onToggle={toggleOne}
-                      onEdit={openEdit}
-                      onDelete={setDeleteTarget}
-                      onExportJson={exportSingleJson}
-                      onExportCsv={exportSingleCsv}
-                    />
-                  ))}
-                  {recipients.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="border-0">
-                        <div className="empty-state">
-                          <div className="empty-state-icon">
-                            <i className="bi bi-inbox"></i>
-                          </div>
-                          <h6 className="empty-state-title">No recipients yet</h6>
-                          <p className="empty-state-text">
-                            Import a file or add one manually to populate your scratchpad.
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </Table>
-            </div>
-          </Card.Body>
-        </Card>
-      </div>
-
-      {/* Edit modal */}
-      <Modal show={editTarget !== null} onHide={() => setEditTarget(null)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Edit recipient</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {editTarget !== null && (
-            <Form onSubmit={(e) => { e.preventDefault(); handleSaveEdit() }}>
-              <div className="field">
-                <Form.Label className="form-label-reachy" htmlFor="edit-email">Email</Form.Label>
-                <Form.Control
-                  id="edit-email"
-                  type="email"
-                  value={editingRecipient?.email ?? ''}
-                  disabled
-                  className="form-control-reachy"
-                />
-                <div className="form-hint-reachy">
-                  <i className="bi bi-info-circle"></i>
-                  <span>Email cannot be changed.</span>
-                </div>
-              </div>
-              <div className="field">
-                <Form.Label className="form-label-reachy" htmlFor="edit-name">Name</Form.Label>
-                <Form.Control
-                  id="edit-name"
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="form-control-reachy"
-                  placeholder="Jane Doe"
-                />
-              </div>
-              <div className="field">
-                <Form.Label className="form-label-reachy" htmlFor="edit-company">Company</Form.Label>
-                <Form.Control
-                  id="edit-company"
-                  type="text"
-                  value={editCompany}
-                  onChange={(e) => setEditCompany(e.target.value)}
-                  className="form-control-reachy"
-                  placeholder="Acme Inc."
-                />
-              </div>
-            </Form>
-          )}
-        </Modal.Body>
-        <Modal.Footer className="border-0">
-          <Button variant="outline-secondary" className="btn-reachy-outline" onClick={() => setEditTarget(null)}>
-            Cancel
-          </Button>
-          <button type="button" className="btn-submit-reachy w-auto py-2 px-4" onClick={handleSaveEdit}>
-            <i className="bi bi-check-lg"></i>
-            Save changes
-          </button>
-        </Modal.Footer>
-      </Modal>
+      <EditRecipientModal
+        show={editTarget !== null}
+        email={editingRecipient?.email ?? ''}
+        name={editName}
+        company={editCompany}
+        onNameChange={setEditName}
+        onCompanyChange={setEditCompany}
+        onSave={handleSaveEdit}
+        onCancel={() => setEditTarget(null)}
+      />
 
       {/* Single delete confirmation */}
       <ConfirmModal

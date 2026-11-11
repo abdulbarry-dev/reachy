@@ -1,91 +1,22 @@
 import { useState } from 'react'
-import { Button, Card, Col, Form, Row } from 'react-bootstrap'
+import { Row } from 'react-bootstrap'
 import { PageHeader } from '../components/PageHeader'
-import { SectionHeader } from '../components/SectionHeader'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { useEmailAccounts } from '../hooks/useEmailAccounts'
 import { useToast } from '../hooks/useToast'
 import { ConfirmModal } from '../components/ConfirmModal'
-import { Skeleton } from '../components/Skeleton'
-import { invokeEdgeFunction } from '../lib/edge-functions'
-import type { EmailAccount } from '../types'
-
-function AccountRow({ acc, onDelete }: { acc: EmailAccount; onDelete: (id: string) => void }) {
-  const initials = acc.from_name
-    .split(' ')
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-
-  return (
-    <div>
-      <div className="account-item">
-        <div className="d-flex align-items-center gap-3">
-          <div className="account-avatar">{initials || '?'}</div>
-          <div>
-            <div className="fw-bold text-dark">{acc.from_name}</div>
-            <div className="small text-muted">{acc.from_email}</div>
-          </div>
-        </div>
-        <div className="d-flex align-items-center gap-2">
-          <span className="badge bg-light text-muted border d-none d-md-inline account-host-badge">
-            {acc.smtp_host}:{acc.smtp_port}
-          </span>
-          <Button
-            variant="outline-danger"
-            size="sm"
-            className="rounded-circle d-inline-flex align-items-center justify-content-center account-delete-btn"
-            onClick={() => onDelete(acc.id)}
-            aria-label={`Delete ${acc.from_email} account`}
-          >
-            <i className="bi bi-trash" aria-hidden="true"></i>
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
+import { ConnectAccountForm } from './settings/ConnectAccountForm'
+import { ConnectedAccountsCard } from './settings/ConnectedAccountsCard'
 
 export function Settings() {
   const { accounts, loading: accountsLoading, refetch, deleteAccount } = useEmailAccounts()
   const { toast } = useToast()
 
-  const [fromName, setFromName] = useState('')
-  const [fromEmail, setFromEmail] = useState('')
-  const [appPassword, setAppPassword] = useState('')
-  const [smtpHost, setSmtpHost] = useState('smtp.gmail.com')
-  const [smtpPort, setSmtpPort] = useState(587)
-  const [connecting, setConnecting] = useState(false)
-  const [connectError, setConnectError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
-  const isSecure = smtpPort === 465
-
-  const handleConnect = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setConnecting(true)
-    setConnectError(null)
-
-    try {
-      await invokeEdgeFunction(
-        'connect-email-account',
-        { fromName, fromEmail, appPassword, smtpHost, smtpPort },
-        'Connection failed',
-      )
-
-      toast('Email account connected successfully', 'success')
-      setFromName('')
-      setFromEmail('')
-      setAppPassword('')
-      setSmtpHost('smtp.gmail.com')
-      setSmtpPort(587)
-      refetch()
-    } catch (err) {
-      setConnectError(err instanceof Error ? err.message : 'Failed to connect')
-    } finally {
-      setConnecting(false)
-    }
+  const handleConnected = () => {
+    toast('Email account connected successfully', 'success')
+    refetch()
   }
 
   const handleDelete = async () => {
@@ -101,7 +32,6 @@ export function Settings() {
 
   return (
     <AnimatedPage>
-      {/* Page header */}
       <PageHeader
         title="Settings"
         description="Connect and manage your Gmail sender accounts."
@@ -117,199 +47,12 @@ export function Settings() {
 
       <div>
         <Row className="g-4">
-          <Col lg={7}>
-            <div>
-              <Card className="card-reachy border-0">
-                <Card.Body className="p-4">
-                  <SectionHeader
-                    icon="bi-envelope-plus"
-                    title="Connect Gmail account"
-                    description="Add a new sender identity"
-                    className="mb-4"
-                  />
-
-                  <Form onSubmit={handleConnect}>
-                    {/* Sender identity */}
-                    <Row className="g-3">
-                      <Col md={6}>
-                        <div className="field">
-                          <Form.Label className="form-label-reachy" htmlFor="settings-name">Your name</Form.Label>
-                          <Form.Control
-                            id="settings-name"
-                            type="text"
-                            placeholder="Jane Doe"
-                            className="form-control-reachy"
-                            value={fromName}
-                            onChange={(e) => setFromName(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </Col>
-                      <Col md={6}>
-                        <div className="field">
-                          <Form.Label className="form-label-reachy" htmlFor="settings-email">Gmail address</Form.Label>
-                          <Form.Control
-                            id="settings-email"
-                            type="email"
-                            placeholder="you@gmail.com"
-                            className="form-control-reachy"
-                            value={fromEmail}
-                            onChange={(e) => setFromEmail(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </Col>
-                    </Row>
-
-                    <div className="field">
-                      <Form.Label className="form-label-reachy" htmlFor="settings-password">Gmail App Password</Form.Label>
-                      <Form.Control
-                        id="settings-password"
-                        type="password"
-                        placeholder="•••• •••• •••• ••••"
-                        className="form-control-reachy"
-                        value={appPassword}
-                        onChange={(e) => setAppPassword(e.target.value)}
-                        required
-                      />
-                      <div className="form-hint-reachy">
-                        <i className="bi bi-info-circle"></i>
-                        <span>
-                          Generate in your{' '}
-                          <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="fw-semibold text-decoration-none link-reachy">
-                            Google Account settings
-                          </a>
-                          . Requires 2FA enabled.
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* SMTP connection settings — grouped */}
-                    <div className="field-group">
-                      <div className="field-group-label">
-                        <i className="bi bi-hdd-network"></i>
-                        SMTP Connection
-                      </div>
-                      <Row className="g-3 align-items-stretch">
-                        <Col xs={12} sm={7}>
-                          <div className="field mb-0">
-                            <Form.Label className="form-label-reachy" htmlFor="settings-host">Host</Form.Label>
-                            <Form.Control
-                              id="settings-host"
-                              type="text"
-                              className="form-control-reachy"
-                              value={smtpHost}
-                              onChange={(e) => setSmtpHost(e.target.value)}
-                            />
-                          </div>
-                        </Col>
-                        <Col xs={12} sm={5}>
-                          <div className="field mb-0">
-                            <Form.Label className="form-label-reachy" htmlFor="settings-port">Port</Form.Label>
-                            <Form.Control
-                              id="settings-port"
-                              type="number"
-                              min={1}
-                              max={65535}
-                              className="form-control-reachy"
-                              value={smtpPort}
-                              onChange={(e) => setSmtpPort(Math.max(1, Math.min(65535, Math.round(Number(e.target.value)))))}
-                            />
-                          </div>
-                        </Col>
-                        <Col xs={12}>
-                          <div className="toggle-field">
-                            <label htmlFor="secure-switch" className="toggle-field-copy">
-                              <span className="toggle-field-label">Encryption</span>
-                              <span className="toggle-field-hint">
-                                {isSecure ? 'SSL — implicit TLS on port 465' : 'TLS — STARTTLS on port 587'}
-                              </span>
-                            </label>
-                            <Form.Check
-                              type="switch"
-                              id="secure-switch"
-                              checked={isSecure}
-                              onChange={(e) => setSmtpPort(e.target.checked ? 465 : 587)}
-                              aria-label="Use SSL with port 465 instead of STARTTLS with port 587"
-                              className="toggle-field-switch"
-                            />
-                          </div>
-                        </Col>
-                      </Row>
-                    </div>
-
-                    {connectError && (
-                      <div className="form-error-reachy">
-                        <i className="bi bi-exclamation-triangle-fill"></i>
-                        <span>{connectError}</span>
-                      </div>
-                    )}
-
-                    <button type="submit" className="btn-submit-reachy" disabled={connecting}>
-                      {connecting ? (
-                        <><span className="spinner-border spinner-border-sm" />Testing connection...</>
-                      ) : (
-                        <><i className="bi bi-plug"></i>Test &amp; Connect</>
-                      )}
-                    </button>
-                  </Form>
-                </Card.Body>
-              </Card>
-            </div>
-          </Col>
-
-          <Col lg={5}>
-            <div className="h-100">
-              <Card className="card-reachy border-0 h-100">
-                <Card.Body className="p-4">
-                  <SectionHeader
-                    icon="bi-list-nested"
-                    title="Connected accounts"
-                    description={
-                      <>
-                        {!accountsLoading && `${accounts.length} ${accounts.length === 1 ? 'account' : 'accounts'} connected`}
-                        {accountsLoading && 'Loading...'}
-                      </>
-                    }
-                    className="mb-4"
-                  />
-
-                  {accountsLoading ? (
-                    <div>
-                      {[0, 1].map((i) => (
-                        <div key={i} className="account-item">
-                          <div className="d-flex align-items-center gap-3 flex-grow-1">
-                            <Skeleton width={40} height={40} borderRadius={10} />
-                            <div className="flex-grow-1">
-                              <Skeleton width="50%" height={16} borderRadius={6} />
-                              <Skeleton width="80%" height={13} borderRadius={6} className="mt-1" />
-                            </div>
-                          </div>
-                          <Skeleton width={34} height={34} borderRadius={17} />
-                        </div>
-                      ))}
-                    </div>
-                  ) : accounts.length === 0 ? (
-                    <div className="empty-state">
-                      <div className="empty-state-icon">
-                        <i className="bi bi-inbox"></i>
-                      </div>
-                      <h6 className="empty-state-title">No accounts connected</h6>
-                      <p className="empty-state-text">
-                        Connect your first Gmail account to start sending campaigns.
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      {accounts.map((acc) => (
-                        <AccountRow key={acc.id} acc={acc} onDelete={setDeleteTarget} />
-                      ))}
-                    </div>
-                  )}
-                </Card.Body>
-              </Card>
-            </div>
-          </Col>
+          <ConnectAccountForm onConnected={handleConnected} />
+          <ConnectedAccountsCard
+            accounts={accounts}
+            loading={accountsLoading}
+            onDelete={setDeleteTarget}
+          />
         </Row>
       </div>
 

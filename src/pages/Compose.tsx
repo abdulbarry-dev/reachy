@@ -1,17 +1,17 @@
 import { useState } from 'react'
-import { Alert, Button, Card, Col, Form, Row } from 'react-bootstrap'
+import { Col, Row } from 'react-bootstrap'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { addRecipients } from '../store/recipientsSlice'
 import { PageHeader } from '../components/PageHeader'
-import { SectionHeader } from '../components/SectionHeader'
 import { AnimatedPage } from '../components/AnimatedPage'
-import { FileDropzone } from '../components/FileDropzone'
-import { EmailPreview } from '../components/EmailPreview'
 import { useEmailAccounts } from '../hooks/useEmailAccounts'
 import { useToast } from '../hooks/useToast'
-import { Skeleton } from '../components/Skeleton'
 import { invokeEdgeFunction } from '../lib/edge-functions'
+import { useCampaignDraft } from './compose/useCampaignDraft'
+import { CampaignDetailsForm } from './compose/CampaignDetailsForm'
+import { ScratchpadCard } from './compose/ScratchpadCard'
+import { LivePreviewCard } from './compose/LivePreviewCard'
 import type { RootState, AppDispatch } from '../store'
 import type { ImportedRecipient } from '../types'
 
@@ -20,19 +20,11 @@ export function Compose() {
   const navigate = useNavigate()
   const importedRecipients = useSelector((state: RootState) => state.recipients.items)
   const { accounts, loading: accountsLoading } = useEmailAccounts()
-
-  const [emailAccountId, setEmailAccountId] = useState('')
-  const [campaignName, setCampaignName] = useState('')
-  const [subject, setSubject] = useState('')
-  const [body, setBody] = useState('')
-  const [sendRate, setSendRate] = useState(60)
-  const [dailyCap, setDailyCap] = useState(90)
-  const [previewIndex, setPreviewIndex] = useState(0)
   const { toast } = useToast()
+
+  const draft = useCampaignDraft()
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const previewRecipient = importedRecipients[previewIndex] ?? null
 
   const handleUpload = (parsed: ImportedRecipient[]) => {
     dispatch(addRecipients(parsed))
@@ -40,19 +32,19 @@ export function Compose() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!emailAccountId) {
+    if (!draft.emailAccountId) {
       setError('Select an email account first.')
       return
     }
-    if (!campaignName.trim()) {
+    if (!draft.campaignName.trim()) {
       setError('Enter a campaign name.')
       return
     }
-    if (!subject.trim()) {
+    if (!draft.subject.trim()) {
       setError('Enter a subject template.')
       return
     }
-    if (!body.trim()) {
+    if (!draft.body.trim()) {
       setError('Enter a body template.')
       return
     }
@@ -68,13 +60,13 @@ export function Compose() {
       const data = await invokeEdgeFunction<{ campaignId: string }>(
         'create-campaign',
         {
-          emailAccountId,
-          name: campaignName.trim(),
-          subjectTemplate: subject.trim(),
-          bodyTemplate: body.trim(),
+          emailAccountId: draft.emailAccountId,
+          name: draft.campaignName.trim(),
+          subjectTemplate: draft.subject.trim(),
+          bodyTemplate: draft.body.trim(),
           recipients: importedRecipients,
-          sendRateSeconds: sendRate,
-          dailyCap,
+          sendRateSeconds: draft.sendRate,
+          dailyCap: draft.dailyCap,
         },
         'Failed to create campaign',
       )
@@ -90,7 +82,6 @@ export function Compose() {
 
   return (
     <AnimatedPage>
-      {/* Page header */}
       <PageHeader
         title="New campaign"
         description="Write once, personalize for every recipient."
@@ -108,232 +99,23 @@ export function Compose() {
       <div>
         <Row className="g-4">
           <Col lg={7} className="min-w-0">
-            <div className="min-w-0">
-              <Card className="card-reachy border-0 mb-4">
-                <Card.Body className="p-4">
-                  <SectionHeader
-                    icon="bi-pencil-square"
-                    title="Campaign details"
-                    description="Configure your sender and message"
-                    className="mb-4"
-                  />
-
-                  <Form onSubmit={handleCreate}>
-                    {accountsLoading ? (
-                      <div className="field">
-                        <Skeleton width={80} height={14} borderRadius={4} className="mb-2" />
-                        <Skeleton width="100%" height={44} borderRadius={10} />
-                      </div>
-                    ) : accounts.length === 0 ? (
-                      <Alert variant="warning" className="mb-3 border-0 rounded-3 d-flex align-items-center gap-2">
-                        <i className="bi bi-exclamation-triangle-fill"></i>
-                        <span>
-                          No email accounts connected.{' '}
-                          <Link to="/settings" className="fw-semibold text-decoration-none">Connect one in Settings</Link> first.
-                        </span>
-                      </Alert>
-                    ) : (
-                      <div className="field">
-                        <Form.Label className="form-label-reachy" htmlFor="compose-from">From</Form.Label>
-                        <Form.Select
-                          id="compose-from"
-                          className="form-select-reachy"
-                          autoComplete="off"
-                          value={emailAccountId}
-                          onChange={(e) => setEmailAccountId(e.target.value)}
-                          required
-                        >
-                          <option value="">Select a sender account</option>
-                          {accounts.map((acc) => (
-                            <option key={acc.id} value={acc.id}>
-                              {acc.from_name} &lt;{acc.from_email}&gt;
-                            </option>
-                          ))}
-                        </Form.Select>
-                      </div>
-                    )}
-
-                    <div className="field">
-                      <Form.Label className="form-label-reachy" htmlFor="compose-name">Campaign name</Form.Label>
-                      <Form.Control
-                        id="compose-name"
-                        type="text"
-                        inputMode="text"
-                        autoComplete="off"
-                        placeholder="Q3 Outreach"
-                        className="form-control-reachy"
-                        value={campaignName}
-                        onChange={(e) => setCampaignName(e.target.value)}
-                        required
-                      />
-                    </div>
-
-                    <div className="field">
-                      <Form.Label className="form-label-reachy" htmlFor="compose-subject">Subject template</Form.Label>
-                      <Form.Control
-                        id="compose-subject"
-                        type="text"
-                        inputMode="text"
-                        autoComplete="off"
-                        placeholder="Quick question, {{name}}"
-                        className="form-control-reachy"
-                        value={subject}
-                        onChange={(e) => setSubject(e.target.value)}
-                        required
-                      />
-                      <div className="form-hint-reachy">
-                        <i className="bi bi-tag"></i>
-                        <span>Use <span className="var-chip">{'{{name}}'}</span> to personalize per recipient.</span>
-                      </div>
-                    </div>
-
-                    <div className="field">
-                      <Form.Label className="form-label-reachy" htmlFor="compose-body">Email body (HTML)</Form.Label>
-                      <Form.Control
-                        id="compose-body"
-                        as="textarea"
-                        rows={8}
-                        inputMode="text"
-                        autoComplete="off"
-                        placeholder={'<p>Hi {{name}},</p>\n<p>...</p>'}
-                        className="form-control-reachy"
-                        value={body}
-                        onChange={(e) => setBody(e.target.value)}
-                        required
-                      />
-                      <div className="form-hint-reachy">
-                        <i className="bi bi-code-slash"></i>
-                        <span>Use {'{{name}}'}, {'{{company}}'}, or any column from your import.</span>
-                      </div>
-                    </div>
-
-                    {/* Sending limits — grouped */}
-                    <div className="field-group">
-                      <div className="field-group-label">
-                        <i className="bi bi-speedometer2"></i>
-                        Sending Limits
-                      </div>
-                      <Row className="g-3">
-                        <Col xs={12} sm={6}>
-                          <div className="field mb-0">
-                            <Form.Label className="form-label-reachy" htmlFor="compose-interval">Send interval (seconds)</Form.Label>
-                            <Form.Control
-                              id="compose-interval"
-                              type="number"
-                              inputMode="numeric"
-                              min={30}
-                              className="form-control-reachy"
-                              value={sendRate}
-                              onChange={(e) => setSendRate(Math.max(30, Number(e.target.value)))}
-                            />
-                          </div>
-                        </Col>
-                        <Col xs={12} sm={6}>
-                          <div className="field mb-0">
-                            <Form.Label className="form-label-reachy" htmlFor="compose-daily-cap">Daily cap</Form.Label>
-                            <Form.Control
-                              id="compose-daily-cap"
-                              type="number"
-                              inputMode="numeric"
-                              min={1}
-                              max={90}
-                              className="form-control-reachy"
-                              value={dailyCap}
-                              onChange={(e) => setDailyCap(Math.max(1, Math.min(90, Number(e.target.value))))}
-                            />
-                          </div>
-                        </Col>
-                      </Row>
-                      <div className="form-hint-reachy mt-2 mb-0">
-                        <i className="bi bi-shield-check"></i>
-                        <span>Defaults: 60s between sends, 90/day — safely under Gmail limits.</span>
-                      </div>
-                    </div>
-
-                    {error && (
-                      <div className="form-error-reachy">
-                        <i className="bi bi-exclamation-triangle-fill"></i>
-                        <span>{error}</span>
-                      </div>
-                    )}
-
-                    <button type="submit" className="btn-submit-reachy" disabled={creating || accounts.length === 0}>
-                      {creating ? (
-                        <><span className="spinner-border spinner-border-sm" />Creating campaign...</>
-                      ) : (
-                        <><i className="bi bi-send"></i>Create campaign</>
-                      )}
-                    </button>
-                  </Form>
-                </Card.Body>
-              </Card>
-            </div>
-
-            <div>
-              <Card className="card-reachy border-0">
-                <Card.Body className="p-4">
-                  <SectionHeader
-                    icon="bi-people"
-                    title="Recipients"
-                    description={`${importedRecipients.length} in scratchpad`}
-                    className="mb-3"
-                  />
-                  <FileDropzone onUpload={handleUpload} />
-                  <div className="info-hint mt-3">
-                    <i className="bi bi-info-circle"></i>
-                    <span>Recipients from the scratchpad are included. Upload more files to add.</span>
-                  </div>
-                </Card.Body>
-              </Card>
-            </div>
+            <CampaignDetailsForm
+              draft={draft}
+              accounts={accounts}
+              accountsLoading={accountsLoading}
+              creating={creating}
+              error={error}
+              onSubmit={handleCreate}
+            />
+            <ScratchpadCard count={importedRecipients.length} onUpload={handleUpload} />
           </Col>
 
           <Col lg={5} className="min-w-0">
-            <div className="h-100 min-w-0">
-              <Card className="card-reachy border-0 h-100">
-                <Card.Body className="p-4 d-flex flex-column">
-                  <div className="d-flex justify-content-between align-items-center mb-4 preview-header-compact flex-wrap gap-2">
-                    <SectionHeader
-                      icon="bi-eye"
-                      title="Live preview"
-                      description="See how recipients view your email"
-                      className="min-w-0"
-                    />
-                    {importedRecipients.length > 1 && (
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        className="btn-reachy-outline btn-reachy-sm"
-                        onClick={() => setPreviewIndex((i) => (i + 1) % importedRecipients.length)}
-                      >
-                        <i className="bi bi-arrow-repeat me-1"></i>
-                        Next
-                      </Button>
-                    )}
-                  </div>
-
-                  {previewRecipient ? (
-                    <EmailPreview
-                      subject={subject}
-                      body={body}
-                      recipient={previewRecipient}
-                    />
-                  ) : (
-                    <div className="empty-state flex-grow-1 d-flex align-items-center justify-content-center">
-                      <div>
-                        <div className="empty-state-icon">
-                          <i className="bi bi-envelope"></i>
-                        </div>
-                        <h6 className="empty-state-title">No preview available</h6>
-                        <p className="empty-state-text">
-                          Import recipients to the scratchpad to see a live preview of your personalized email.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </Card.Body>
-              </Card>
-            </div>
+            <LivePreviewCard
+              recipients={importedRecipients}
+              subject={draft.subject}
+              body={draft.body}
+            />
           </Col>
         </Row>
       </div>
