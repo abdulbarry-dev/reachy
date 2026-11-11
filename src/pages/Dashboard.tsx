@@ -1,6 +1,7 @@
 import { useMemo, useCallback } from 'react'
 import { Card, Col, Row } from 'react-bootstrap'
 import { Link, useNavigate } from 'react-router-dom'
+import { PageHeader } from '../components/PageHeader'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { StatCard } from '../components/StatCard'
 import { useCampaigns } from '../hooks/useCampaigns'
@@ -48,16 +49,16 @@ export function Dashboard() {
 
   return (
     <AnimatedPage>
-      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4 mb-sm-5">
-        <div>
-          <h1 className="page-title h2 mb-1">Dashboard</h1>
-          <p className="text-muted mb-0">Your outreach campaigns and metrics at a glance</p>
-        </div>
-        <Link to="/compose" className="btn btn-gradient">
-          <i className="bi bi-plus-lg fs-6"></i>
-          <span>New campaign</span>
-        </Link>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Your outreach campaigns and metrics at a glance"
+        actions={
+          <Link to="/compose" className="btn btn-gradient">
+            <i className="bi bi-plus-lg fs-6"></i>
+            <span>New campaign</span>
+          </Link>
+        }
+      />
 
       {loading ? (
         <Row className="g-4 mb-4 mb-sm-5">

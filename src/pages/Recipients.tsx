@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react'
 import { Alert, Button, Card, Col, Form, Modal, Row, Table } from 'react-bootstrap'
 import { useDispatch, useSelector } from 'react-redux'
 import { addRecipient, addRecipients, clearRecipients, removeRecipients, updateRecipient } from '../store/recipientsSlice'
+import { PageHeader } from '../components/PageHeader'
+import { SectionHeader } from '../components/SectionHeader'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { FileDropzone } from '../components/FileDropzone'
@@ -153,18 +155,19 @@ export function Recipients() {
   return (
     <AnimatedPage>
       {/* Page header */}
-      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4 mb-sm-5">
-        <div>
-          <h1 className="h2 mb-1 page-title">Recipients</h1>
-          <p className="text-muted mb-0 page-header-desc">Import contacts from files. These will be available when you create a campaign.</p>
-        </div>
-        {recipients.length > 0 && (
-          <span className="count-badge d-inline-flex align-items-center gap-1.5">
-            <i className="bi bi-people-fill"></i>
-            {recipients.length} total
-          </span>
-        )}
-      </div>
+      <PageHeader
+        title="Recipients"
+        description="Import contacts from files. These will be available when you create a campaign."
+        descriptionClassName="page-header-desc"
+        actions={
+          recipients.length > 0 && (
+            <span className="count-badge d-inline-flex align-items-center gap-1.5">
+              <i className="bi bi-people-fill"></i>
+              {recipients.length} total
+            </span>
+          )
+        }
+      />
 
       {addedCount > 0 && (
         <div className="mb-4">
@@ -181,15 +184,12 @@ export function Recipients() {
             <div className="h-100 min-w-0">
               <Card className="card-reachy border-0 h-100">
                 <Card.Body className="p-4 d-flex flex-column">
-                  <div className="d-flex align-items-center gap-3 mb-4">
-                    <div className="section-icon">
-                      <i className="bi bi-cloud-arrow-up"></i>
-                    </div>
-                    <div>
-                      <h5 className="section-title mb-0">Import from file</h5>
-                      <p className="text-muted small mb-0">JSON, CSV, or Excel</p>
-                    </div>
-                  </div>
+                  <SectionHeader
+                    icon="bi-cloud-arrow-up"
+                    title="Import from file"
+                    description="JSON, CSV, or Excel"
+                    className="mb-4"
+                  />
                   <FileDropzone onUpload={handleUpload} />
                   <div className="d-flex align-items-center gap-2 mt-3 pt-2 border-top">
                     <span className="small text-muted me-1">Need a template?</span>
@@ -225,15 +225,12 @@ export function Recipients() {
             <div className="h-100 min-w-0">
               <Card className="card-reachy border-0 h-100">
                 <Card.Body className="p-4 d-flex flex-column">
-                  <div className="d-flex align-items-center gap-3 mb-4">
-                    <div className="section-icon">
-                      <i className="bi bi-person-plus"></i>
-                    </div>
-                    <div>
-                      <h5 className="section-title mb-0">Add manually</h5>
-                      <p className="text-muted small mb-0">One recipient at a time</p>
-                    </div>
-                  </div>
+                  <SectionHeader
+                    icon="bi-person-plus"
+                    title="Add manually"
+                    description="One recipient at a time"
+                    className="mb-4"
+                  />
                   <Form onSubmit={handleManualAdd} className="flex-grow-1 d-flex flex-column">
                     <div className="field">
                       <Form.Label className="form-label-reachy" htmlFor="recip-email">Email address</Form.Label>
@@ -301,15 +298,11 @@ export function Recipients() {
           <Card.Body className="p-4">
             {/* Toolbar */}
             <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-              <div className="d-flex align-items-center gap-3">
-                <div className="section-icon">
-                  <i className="bi bi-list-ul"></i>
-                </div>
-                <div>
-                  <h5 className="section-title mb-0">Recipients list</h5>
-                  <p className="text-muted small mb-0">{recipients.length} {recipients.length === 1 ? 'contact' : 'contacts'}</p>
-                </div>
-              </div>
+              <SectionHeader
+                icon="bi-list-ul"
+                title="Recipients list"
+                description={`${recipients.length} ${recipients.length === 1 ? 'contact' : 'contacts'}`}
+              />
               <div className="d-flex gap-2 flex-wrap toolbar-actions">
                 <Button
                   variant="outline-secondary"

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Button, Card, Col, Form, Row } from 'react-bootstrap'
+import { PageHeader } from '../components/PageHeader'
+import { SectionHeader } from '../components/SectionHeader'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { useEmailAccounts } from '../hooks/useEmailAccounts'
 import { useToast } from '../hooks/useToast'
@@ -100,18 +102,18 @@ export function Settings() {
   return (
     <AnimatedPage>
       {/* Page header */}
-      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4 mb-sm-5">
-        <div>
-          <h1 className="h2 mb-1 page-title">Settings</h1>
-          <p className="text-muted mb-0">Connect and manage your Gmail sender accounts.</p>
-        </div>
-        {!accountsLoading && accounts.length > 0 && (
-          <span className="count-badge d-inline-flex align-items-center gap-1.5">
-            <i className="bi bi-envelope-fill"></i>
-            {accounts.length} {accounts.length === 1 ? 'account' : 'accounts'}
-          </span>
-        )}
-      </div>
+      <PageHeader
+        title="Settings"
+        description="Connect and manage your Gmail sender accounts."
+        actions={
+          !accountsLoading && accounts.length > 0 && (
+            <span className="count-badge d-inline-flex align-items-center gap-1.5">
+              <i className="bi bi-envelope-fill"></i>
+              {accounts.length} {accounts.length === 1 ? 'account' : 'accounts'}
+            </span>
+          )
+        }
+      />
 
       <div>
         <Row className="g-4">
@@ -119,15 +121,12 @@ export function Settings() {
             <div>
               <Card className="card-reachy border-0">
                 <Card.Body className="p-4">
-                  <div className="d-flex align-items-center gap-3 mb-4">
-                    <div className="section-icon">
-                      <i className="bi bi-envelope-plus"></i>
-                    </div>
-                    <div>
-                      <h5 className="section-title mb-0">Connect Gmail account</h5>
-                      <p className="text-muted small mb-0">Add a new sender identity</p>
-                    </div>
-                  </div>
+                  <SectionHeader
+                    icon="bi-envelope-plus"
+                    title="Connect Gmail account"
+                    description="Add a new sender identity"
+                    className="mb-4"
+                  />
 
                   <Form onSubmit={handleConnect}>
                     {/* Sender identity */}
@@ -263,18 +262,17 @@ export function Settings() {
             <div className="h-100">
               <Card className="card-reachy border-0 h-100">
                 <Card.Body className="p-4">
-                  <div className="d-flex align-items-center gap-3 mb-4">
-                    <div className="section-icon">
-                      <i className="bi bi-list-nested"></i>
-                    </div>
-                    <div>
-                      <h5 className="section-title mb-0">Connected accounts</h5>
-                      <p className="text-muted small mb-0">
+                  <SectionHeader
+                    icon="bi-list-nested"
+                    title="Connected accounts"
+                    description={
+                      <>
                         {!accountsLoading && `${accounts.length} ${accounts.length === 1 ? 'account' : 'accounts'} connected`}
                         {accountsLoading && 'Loading...'}
-                      </p>
-                    </div>
-                  </div>
+                      </>
+                    }
+                    className="mb-4"
+                  />
 
                   {accountsLoading ? (
                     <div>

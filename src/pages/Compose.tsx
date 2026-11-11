@@ -3,6 +3,8 @@ import { Alert, Button, Card, Col, Form, Row } from 'react-bootstrap'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { addRecipients } from '../store/recipientsSlice'
+import { PageHeader } from '../components/PageHeader'
+import { SectionHeader } from '../components/SectionHeader'
 import { AnimatedPage } from '../components/AnimatedPage'
 import { FileDropzone } from '../components/FileDropzone'
 import { EmailPreview } from '../components/EmailPreview'
@@ -89,18 +91,19 @@ export function Compose() {
   return (
     <AnimatedPage>
       {/* Page header */}
-      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4 mb-sm-5">
-        <div>
-          <h1 className="h2 mb-1 page-title">New campaign</h1>
-          <p className="text-muted mb-0 page-header-desc">Write once, personalize for every recipient.</p>
-        </div>
-        {importedRecipients.length > 0 && (
-          <span className="count-badge d-inline-flex align-items-center gap-1.5">
-            <i className="bi bi-people-fill"></i>
-            {importedRecipients.length} recipients ready
-          </span>
-        )}
-      </div>
+      <PageHeader
+        title="New campaign"
+        description="Write once, personalize for every recipient."
+        descriptionClassName="page-header-desc"
+        actions={
+          importedRecipients.length > 0 && (
+            <span className="count-badge d-inline-flex align-items-center gap-1.5">
+              <i className="bi bi-people-fill"></i>
+              {importedRecipients.length} recipients ready
+            </span>
+          )
+        }
+      />
 
       <div>
         <Row className="g-4">
@@ -108,15 +111,12 @@ export function Compose() {
             <div className="min-w-0">
               <Card className="card-reachy border-0 mb-4">
                 <Card.Body className="p-4">
-                  <div className="d-flex align-items-center gap-3 mb-4">
-                    <div className="section-icon">
-                      <i className="bi bi-pencil-square"></i>
-                    </div>
-                    <div>
-                      <h5 className="section-title mb-0">Campaign details</h5>
-                      <p className="text-muted small mb-0">Configure your sender and message</p>
-                    </div>
-                  </div>
+                  <SectionHeader
+                    icon="bi-pencil-square"
+                    title="Campaign details"
+                    description="Configure your sender and message"
+                    className="mb-4"
+                  />
 
                   <Form onSubmit={handleCreate}>
                     {accountsLoading ? (
@@ -272,15 +272,12 @@ export function Compose() {
             <div>
               <Card className="card-reachy border-0">
                 <Card.Body className="p-4">
-                  <div className="d-flex align-items-center gap-3 mb-3">
-                    <div className="section-icon">
-                      <i className="bi bi-people"></i>
-                    </div>
-                    <div>
-                      <h5 className="section-title mb-0">Recipients</h5>
-                      <p className="text-muted small mb-0">{importedRecipients.length} in scratchpad</p>
-                    </div>
-                  </div>
+                  <SectionHeader
+                    icon="bi-people"
+                    title="Recipients"
+                    description={`${importedRecipients.length} in scratchpad`}
+                    className="mb-3"
+                  />
                   <FileDropzone onUpload={handleUpload} />
                   <div className="info-hint mt-3">
                     <i className="bi bi-info-circle"></i>
@@ -296,15 +293,12 @@ export function Compose() {
               <Card className="card-reachy border-0 h-100">
                 <Card.Body className="p-4 d-flex flex-column">
                   <div className="d-flex justify-content-between align-items-center mb-4 preview-header-compact flex-wrap gap-2">
-                    <div className="d-flex align-items-center gap-3 min-w-0">
-                      <div className="section-icon">
-                        <i className="bi bi-eye"></i>
-                      </div>
-                      <div>
-                        <h5 className="section-title mb-0">Live preview</h5>
-                        <p className="text-muted small mb-0">See how recipients view your email</p>
-                      </div>
-                    </div>
+                    <SectionHeader
+                      icon="bi-eye"
+                      title="Live preview"
+                      description="See how recipients view your email"
+                      className="min-w-0"
+                    />
                     {importedRecipients.length > 1 && (
                       <Button
                         variant="outline-primary"
