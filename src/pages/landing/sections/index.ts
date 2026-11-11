@@ -14,3 +14,11 @@ export const LANDING_SECTIONS: readonly LandingSection[] = [
   { id: 'playground', label: 'Playground' },
   { id: 'deliverability', label: 'Deliverability' },
 ]
+
+export { DeliverabilitySection } from './DeliverabilitySection'
+export { FeaturesSection } from './FeaturesSection'
+export { LandingFooter } from './LandingFooter'
+export { PlaygroundSection } from './PlaygroundSection'
+export { SplitSection } from './SplitSection'
+export { TrustStripSection } from './TrustStripSection'
+export { WorkflowSection } from './WorkflowSection'
