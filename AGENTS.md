@@ -10,7 +10,11 @@ npm run preview   # vite preview
 npm run test      # vitest (watch mode)
 npm run test:run  # vitest run (CI-friendly)
 npm run coverage  # vitest run --coverage
-npx tsc --noEmit  # typecheck only (skip build)
+npx tsc -b        # typecheck only (skip build)
+
+# `npx tsc --noEmit` checks NOTHING here: the root tsconfig.json has
+# "files": [] and only project references, so it exits 0 regardless.
+# Use `npx tsc -b` (add --force to ignore incremental state).
 ```
 
 ## Stack
