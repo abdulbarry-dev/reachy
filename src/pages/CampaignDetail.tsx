@@ -4,10 +4,9 @@ import { AnimatedPage } from '../components/AnimatedPage'
 import { useRecipients } from '../hooks/useRecipients'
 import { useCampaigns } from '../hooks/useCampaigns'
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
 import { useToast } from '../hooks/useToast'
 import { SkeletonTable } from '../components/Skeleton'
-import { getEdgeFunctionUrl } from '../lib/edge-functions'
+import { invokeEdgeFunction } from '../lib/edge-functions'
 import { campaignStatusBadgeClass } from '../lib/campaignStatus'
 
 /** While a campaign is running, keep counts and recipient rows fresh. */
@@ -46,23 +45,7 @@ export function CampaignDetail() {
     if (!campaignId) return
     setStarting(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Not authenticated')
-
-      const res = await fetch(getEdgeFunctionUrl('start-campaign'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ campaignId }),
-      })
-
-      if (!res.ok) {
-        let errMsg = 'Failed to start campaign'
-        try { const err = await res.json(); errMsg = err.error ?? errMsg } catch { /* use fallback */ }
-        throw new Error(errMsg)
-      }
+      await invokeEdgeFunction('start-campaign', { campaignId }, 'Failed to start campaign')
 
       toast('Campaign started successfully', 'success')
       refetch()

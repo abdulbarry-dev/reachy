@@ -8,9 +8,8 @@ import { FileDropzone } from '../components/FileDropzone'
 import { EmailPreview } from '../components/EmailPreview'
 import { useEmailAccounts } from '../hooks/useEmailAccounts'
 import { useToast } from '../hooks/useToast'
-import { supabase } from '../lib/supabase'
 import { Skeleton } from '../components/Skeleton'
-import { getEdgeFunctionUrl } from '../lib/edge-functions'
+import { invokeEdgeFunction } from '../lib/edge-functions'
 import type { RootState, AppDispatch } from '../store'
 import type { ImportedRecipient } from '../types'
 
@@ -64,16 +63,9 @@ export function Compose() {
     setError(null)
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Not authenticated')
-
-      const res = await fetch(getEdgeFunctionUrl('create-campaign'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
+      const data = await invokeEdgeFunction<{ campaignId: string }>(
+        'create-campaign',
+        {
           emailAccountId,
           name: campaignName.trim(),
           subjectTemplate: subject.trim(),
@@ -81,16 +73,9 @@ export function Compose() {
           recipients: importedRecipients,
           sendRateSeconds: sendRate,
           dailyCap,
-        }),
-      })
-
-      if (!res.ok) {
-        let errMsg = 'Failed to create campaign'
-        try { const err = await res.json(); errMsg = err.error ?? errMsg } catch { /* use fallback */ }
-        throw new Error(errMsg)
-      }
-
-      const data = await res.json()
+        },
+        'Failed to create campaign',
+      )
 
       toast('Campaign created successfully', 'success')
       navigate(`/campaigns/${data.campaignId}`)

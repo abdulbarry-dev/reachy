@@ -4,9 +4,8 @@ import { AnimatedPage } from '../components/AnimatedPage'
 import { useEmailAccounts } from '../hooks/useEmailAccounts'
 import { useToast } from '../hooks/useToast'
 import { ConfirmModal } from '../components/ConfirmModal'
-import { supabase } from '../lib/supabase'
 import { Skeleton } from '../components/Skeleton'
-import { getEdgeFunctionUrl } from '../lib/edge-functions'
+import { invokeEdgeFunction } from '../lib/edge-functions'
 import type { EmailAccount } from '../types'
 
 function AccountRow({ acc, onDelete }: { acc: EmailAccount; onDelete: (id: string) => void }) {
@@ -67,23 +66,11 @@ export function Settings() {
     setConnectError(null)
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Not authenticated')
-
-      const res = await fetch(getEdgeFunctionUrl('connect-email-account'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ fromName, fromEmail, appPassword, smtpHost, smtpPort }),
-      })
-
-      if (!res.ok) {
-        let errMsg = 'Connection failed'
-        try { const err = await res.json(); errMsg = err.error ?? errMsg } catch { /* use fallback */ }
-        throw new Error(errMsg)
-      }
+      await invokeEdgeFunction(
+        'connect-email-account',
+        { fromName, fromEmail, appPassword, smtpHost, smtpPort },
+        'Connection failed',
+      )
 
       toast('Email account connected successfully', 'success')
       setFromName('')
