@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import reducer, {
   setRecipients,
   addRecipients,
@@ -9,23 +9,17 @@ import reducer, {
 } from '../../src/store/recipientsSlice'
 import type { ImportedRecipient } from '../../src/types'
 
-const STORAGE_KEY = 'reachy_recipients_v1'
-
 function r(email: string, overrides?: Partial<ImportedRecipient>): ImportedRecipient {
   return { email, name: `Name ${email}`, company: 'Acme', ...overrides }
 }
 
-beforeEach(() => {
-  localStorage.clear()
-})
-
+/**
+ * The slice is a pure state machine. Loading from and saving to `localStorage`
+ * is the job of `recipientsStorage` and the persistence listener, tested in
+ * `recipientsStorage.test.ts` and `recipientsPersistence.test.ts`.
+ */
 describe('recipientsSlice', () => {
-  it('loads empty state when localStorage is empty', () => {
-    expect(reducer(undefined, { type: 'unknown' }).items).toEqual([])
-  })
-
-  it('handles malformed localStorage gracefully', () => {
-    localStorage.setItem(STORAGE_KEY, 'broken{{{')
+  it('starts empty', () => {
     expect(reducer(undefined, { type: 'unknown' }).items).toEqual([])
   })
 
@@ -33,11 +27,6 @@ describe('recipientsSlice', () => {
     const s = reducer(undefined, setRecipients([r('a@b.com'), r('A@b.com'), r('c@d.com')]))
     expect(s.items).toHaveLength(2)
     expect(s.items[0].email).toBe('a@b.com')
-  })
-
-  it('setRecipients persists to localStorage', () => {
-    reducer(undefined, setRecipients([r('a@b.com')]))
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toHaveLength(1)
   })
 
   it('addRecipients appends and dedupes across old and new', () => {
@@ -70,10 +59,9 @@ describe('recipientsSlice', () => {
     expect(s.items[0].email).toBe('c@d.com')
   })
 
-  it('clearRecipients empties array and saves to localStorage', () => {
+  it('clearRecipients empties the list', () => {
     const s = reducer({ items: [r('a@b.com')] }, clearRecipients())
     expect(s.items).toEqual([])
-    expect(localStorage.getItem(STORAGE_KEY)).toBe('[]')
   })
 
   it('updateRecipient is case-insensitive', () => {
@@ -86,5 +74,12 @@ describe('recipientsSlice', () => {
     const initial = { items: [r('a@b.com')] }
     const s = reducer(initial, updateRecipient({ email: 'x@y.com', data: { name: 'Nope' } }))
     expect(s.items[0].name).toBe('Name a@b.com')
+  })
+
+  it('does not mutate the previous state', () => {
+    const initial = { items: [r('a@b.com')] }
+    const s = reducer(initial, addRecipient(r('c@d.com')))
+    expect(s).not.toBe(initial)
+    expect(initial.items).toHaveLength(1)
   })
 })

@@ -3,7 +3,7 @@ import { Route, Routes, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, MotionConfig } from 'framer-motion'
 import { supabase } from './lib/supabase'
 import { useDispatch, useSelector } from 'react-redux'
-import { setSession, setUser, setAuthLoading } from './store/authSlice'
+import { setUser, finishBootstrap } from './store/authSlice'
 import { Layout } from './components/Layout'
 import { Skeleton } from './components/Skeleton'
 import { PageFallback } from './components/PageFallback'
@@ -18,8 +18,10 @@ const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m
 const CampaignDetail = lazy(() => import('./pages/CampaignDetail').then((m) => ({ default: m.CampaignDetail })))
 
 function ProtectedRoute() {
-  const { user, loading } = useSelector((state: RootState) => state.auth)
-  if (loading) {
+  const user = useSelector((state: RootState) => state.auth.user)
+  const bootstrapped = useSelector((state: RootState) => state.auth.bootstrapped)
+
+  if (!bootstrapped) {
     return (
       <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh', background: 'var(--reachy-bg-soft)' }}>
         <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -58,15 +60,13 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       dispatch(setUser(session?.user ?? null))
-      dispatch(setSession(session))
-      dispatch(setAuthLoading(false))
+      dispatch(finishBootstrap())
     }).catch(() => {
-      dispatch(setAuthLoading(false))
+      dispatch(finishBootstrap())
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       dispatch(setUser(session?.user ?? null))
-      dispatch(setSession(session))
     })
 
     return () => subscription.unsubscribe()

@@ -101,7 +101,7 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { user, loading, error } = useSelector((state: RootState) => state.auth)
+  const { user, submitting, error } = useSelector((state: RootState) => state.auth)
 
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
@@ -263,8 +263,8 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
                     {error && mode === 'login' && <AuthAlert message={error} />}
                   </AnimatePresence>
 
-                  <button type="submit" className="auth-btn" disabled={loading}>
-                    {loading ? <span className="spinner-border spinner-border-sm me-2" /> : null}
+                  <button type="submit" className="auth-btn" disabled={submitting}>
+                    {submitting ? <span className="spinner-border spinner-border-sm me-2" /> : null}
                     Sign In
                   </button>
 
@@ -294,8 +294,8 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
                     )}
                   </AnimatePresence>
 
-                  <button type="submit" className="auth-btn" disabled={loading}>
-                    {loading ? <span className="spinner-border spinner-border-sm me-2" /> : null}
+                  <button type="submit" className="auth-btn" disabled={submitting}>
+                    {submitting ? <span className="spinner-border spinner-border-sm me-2" /> : null}
                     Create Account
                   </button>
 
@@ -333,8 +333,8 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
                     {error && mode === 'reset-password' && <AuthAlert message={error} />}
                   </AnimatePresence>
 
-                  <button type="submit" className="auth-btn" disabled={loading}>
-                    {loading ? <span className="spinner-border spinner-border-sm me-2" /> : null}
+                  <button type="submit" className="auth-btn" disabled={submitting}>
+                    {submitting ? <span className="spinner-border spinner-border-sm me-2" /> : null}
                     Send Reset Link
                   </button>
 
@@ -384,8 +384,8 @@ export function Auth({ mode }: { mode: 'login' | 'signup' | 'reset-password' }) 
                       {error && mode === 'reset-password' && <AuthAlert message={error} />}
                     </AnimatePresence>
 
-                    <button type="submit" className="auth-btn" disabled={loading}>
-                      {loading ? <span className="spinner-border spinner-border-sm me-2" /> : null}
+                    <button type="submit" className="auth-btn" disabled={submitting}>
+                      {submitting ? <span className="spinner-border spinner-border-sm me-2" /> : null}
                       Update Password
                     </button>
                   </form>

@@ -26,8 +26,10 @@ describe('auth async thunks (integration)', () => {
       const mockSession = { access_token: 'tok' }
       ;(supabase.auth.signUp as Mock).mockResolvedValue({ data: { user: mockUser, session: mockSession }, error: null })
 
-      const result = (await signUp({ email: 'a@b.com', password: 'pw' })(vi.fn(), () => ({}), undefined)) as { payload: { user: unknown; session: unknown } }
-      expect(result.payload).toEqual({ user: mockUser, session: mockSession })
+      const result = (await signUp({ email: 'a@b.com', password: 'pw' })(vi.fn(), () => ({}), undefined)) as { payload: { user: unknown } }
+      // Only the user is kept: the session is already owned by the Supabase
+      // client and was never read from the store.
+      expect(result.payload).toEqual({ user: mockUser })
       expect(supabase.auth.signUp).toHaveBeenCalledWith({ email: 'a@b.com', password: 'pw' })
     })
 
