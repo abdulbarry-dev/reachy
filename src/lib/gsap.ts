@@ -13,9 +13,10 @@ import { SplitText } from 'gsap/SplitText'
  * needed it is added in exactly one place.
  *
  * App-level components (toasts, page transitions, fallbacks) deliberately keep
- * importing GSAP core directly: they need no scroll or split plugins, and
- * registering them here keeps those plugins inside the lazy-loaded landing
- * chunk instead of the main bundle.
+ * importing GSAP core directly: they need no scroll or split plugins, so the
+ * plugin-bearing entry stays reachable only from the lazy-loaded landing route.
+ * `vite.config.ts` must not force `gsap/*` into a shared vendor chunk, or those
+ * plugins end up preloaded on every route again.
  *
  * Registered:
  * - `ScrollTrigger` — scroll-linked motion (progress bar, reveals, scrubs)

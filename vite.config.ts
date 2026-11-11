@@ -29,7 +29,6 @@ export default defineConfig({
             }
             if (
               id.includes('framer-motion') ||
-              id.includes('gsap') ||
               id.includes('react-bootstrap') ||
               id.includes('bootstrap')
             ) {
