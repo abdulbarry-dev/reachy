@@ -143,17 +143,30 @@ export function HeroSection() {
           // Hero title — SplitText masked line reveal (once, on load).
           // autoSplit re-splits when the web font finishes loading; the tween
           // returned from onSplit() is cleaned up and time-synced per re-split.
+          // A re-split after the reveal has started settles the lines instead of
+          // replaying them, which would flash the headline mid-animation.
+          let titleRevealed = false
+
           const titleSplit = SplitText.create('.hero-title', {
             type: 'lines',
             mask: 'lines',
             autoSplit: true,
-            onSplit: (self) =>
-              gsap.from(self.lines, {
+            onSplit: (self) => {
+              if (titleRevealed) {
+                gsap.set(self.lines, { yPercent: 0 })
+                return
+              }
+
+              return gsap.from(self.lines, {
                 yPercent: 110,
                 duration: 0.8,
                 stagger: 0.09,
                 ease: 'power3.out',
-              }),
+                onStart: () => {
+                  titleRevealed = true
+                },
+              })
+            },
           })
 
           // Entrance — once, on load, top-down

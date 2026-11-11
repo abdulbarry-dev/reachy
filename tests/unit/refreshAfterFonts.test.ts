@@ -94,4 +94,43 @@ describe('refreshAfterFonts', () => {
     expect(() => refreshAfterFonts()).not.toThrow()
     expect(refresh).not.toHaveBeenCalled()
   })
+
+  it('cancels a refresh still waiting on the font when the caller goes away', async () => {
+    const fonts = deferred()
+    const { refreshAfterFonts } = await loadModuleWithFonts(fonts.promise)
+
+    const cancel = refreshAfterFonts()
+    cancel()
+
+    fonts.resolve()
+    await fonts.promise
+    await flush()
+
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('cancels a refresh already queued for the next frame', async () => {
+    const fonts = deferred()
+    const { refreshAfterFonts } = await loadModuleWithFonts(fonts.promise)
+
+    // Hold the frame so the refresh is pending when the caller cancels.
+    let frame: FrameRequestCallback | undefined
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      frame = callback
+      return 7
+    })
+    const cancelFrame = vi.fn()
+    vi.stubGlobal('cancelAnimationFrame', cancelFrame)
+
+    const cancel = refreshAfterFonts()
+    fonts.resolve()
+    await fonts.promise
+    await flush()
+
+    cancel()
+    frame?.(0)
+
+    expect(cancelFrame).toHaveBeenCalledWith(7)
+    expect(refresh).not.toHaveBeenCalled()
+  })
 })

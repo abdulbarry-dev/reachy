@@ -30,14 +30,18 @@ const MOTION_OK = '(prefers-reduced-motion: no-preference)'
 /** Where a reveal begins: as the element's top crosses 88% of the viewport. */
 const REVEAL_START = 'top 88%'
 
+/**
+ * The trust strip sits directly under the hero, so it is often already on
+ * screen at load. A shallower start line lets the whole band play immediately
+ * instead of showing its label while the logos stay hidden.
+ */
+const TRUST_STRIP_REVEAL_START = 'top 92%'
+
 /** Shared entrance feel: decisive, short, no overshoot (DESIGN.md §6). */
 const REVEAL_EASE = 'power3.out'
 
 const REVEAL_DURATION = 0.55
 const REVEAL_DISTANCE = 24
-
-/** Card radii are owned by CSS; the clip end state must match them exactly. */
-const CARD_RADIUS = '2rem'
 
 /** Everything that fades and rises as one batch. */
 const REVEAL_SELECTORS = [
@@ -67,7 +71,7 @@ export function useLandingScroll(
         // The trust strip sits just under the hero, so it is often already on
         // screen at load. A shallower start line lets it play immediately
         // instead of showing its label with the logos still hidden.
-        revealGroups(root, ['.logo-item'], 'top 92%')
+        revealGroups(root, ['.logo-item'], TRUST_STRIP_REVEAL_START)
 
         // SplitText owns DOM outside GSAP's context, so it is reverted by hand.
         const splits = maskRevealHeadings(root)
@@ -79,9 +83,12 @@ export function useLandingScroll(
       })
 
       // Fonts change line heights; re-measure once they have settled.
-      refreshAfterFonts()
+      const cancelRefresh = refreshAfterFonts()
 
-      return () => matchMedia.revert()
+      return () => {
+        cancelRefresh()
+        matchMedia.revert()
+      }
     },
     { scope: rootRef },
   )
@@ -131,36 +138,65 @@ function revealGroups(root: HTMLElement, selectors: string[], start = REVEAL_STA
 /**
  * Splits each section heading into lines and hides them behind per-line masks.
  *
- * `autoSplit` re-splits when the web font loads, and `onSplit` returns the tween
- * so GSAP keeps the reveal time-synced with the rebuilt lines.
+ * `autoSplit` re-splits when the web font loads or the viewport changes, and
+ * `onSplit` returns the tween so GSAP keeps the reveal time-synced with the
+ * rebuilt lines.
+ *
+ * Re-splits are why the `revealed` set exists. GSAP reverts the previous
+ * `onSplit` tween before calling it again, so a heading that already played
+ * would replay from behind its mask — a visible flash mid-read. Once a heading
+ * has revealed, later splits simply settle it. A heading that has *not* revealed
+ * still rebuilds its tween, so one that is off-screen is never left stuck.
  */
 function maskRevealHeadings(root: HTMLElement): SplitText[] {
   const headings = gsap.utils.toArray<HTMLElement>('.section-header h2', root)
+  const revealed = new WeakSet<HTMLElement>()
 
   return headings.map((heading) =>
     SplitText.create(heading, {
       type: 'lines',
       mask: 'lines',
       autoSplit: true,
-      onSplit: (split) =>
-        gsap.from(split.lines, {
+      onSplit: (split) => {
+        if (revealed.has(heading)) {
+          gsap.set(split.lines, { yPercent: 0 })
+          return
+        }
+
+        return gsap.from(split.lines, {
           yPercent: 110,
           duration: 0.7,
           stagger: 0.08,
           ease: REVEAL_EASE,
+          onStart: () => revealed.add(heading),
           scrollTrigger: {
             trigger: heading,
             start: REVEAL_START,
             once: true,
           },
-        }),
+        })
+      },
     }),
   )
 }
 
 /**
- * Opens a card out of a clipped inset. The end clip keeps the element's own
- * radius, so the settled card is indistinguishable from its static CSS state.
+ * Builds an inset clip whose corner radius matches the element's own computed
+ * radius.
+ *
+ * The radius is owned by CSS — `.gauge-card` is `2rem` on desktop and `1.25rem`
+ * below 768px — so reading it at tween start keeps the settled clip identical
+ * to the static card at every breakpoint. A constant here silently overrides
+ * the design's mobile radius.
+ */
+function curtainClip(inset: string, target: HTMLElement): string {
+  const radius = getComputedStyle(target).borderRadius || '0px'
+  return `inset(${inset} round ${radius})`
+}
+
+/**
+ * Opens a card out of a clipped inset, keeping its own radius so the settled
+ * card is indistinguishable from its static CSS state.
  */
 function curtainReveal(root: HTMLElement, selector: string): void {
   const target = root.querySelector<HTMLElement>(selector)
@@ -171,12 +207,12 @@ function curtainReveal(root: HTMLElement, selector: string): void {
     {
       autoAlpha: 0,
       y: REVEAL_DISTANCE + 4,
-      clipPath: `inset(7% 6% round ${CARD_RADIUS})`,
+      clipPath: () => curtainClip('7% 6%', target),
     },
     {
       autoAlpha: 1,
       y: 0,
-      clipPath: `inset(0% 0% round ${CARD_RADIUS})`,
+      clipPath: () => curtainClip('0% 0%', target),
       duration: 0.9,
       ease: REVEAL_EASE,
       scrollTrigger: {
