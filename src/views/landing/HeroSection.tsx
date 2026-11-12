@@ -269,11 +269,11 @@ export function HeroSection() {
           ]
 
           // 6. Horizon Dissolve ScrollTrigger: subtly blooms the emerald dawn aura as the user scrolls
-          const glowEl = card?.querySelector<HTMLElement>('.hero-stage-dissolve-glow')
+          const glowEl = card?.querySelector<HTMLElement>('.hero-horizon-glow')
           if (glowEl) {
             const glowTrigger = ScrollTrigger.create({
-              trigger: '.hero-stage-dissolve',
-              start: 'top bottom',
+              trigger: card,
+              start: 'top top',
               end: 'bottom top',
               scrub: 1.2,
               animation: gsap.fromTo(
@@ -549,10 +549,8 @@ export function HeroSection() {
         </Container>
       </div>
 
-      {/* ── Stage-by-Stage Atmospheric Dissolve Apron ── */}
-      <div className="hero-stage-dissolve" aria-hidden="true">
-        <div className="hero-stage-dissolve-glow" />
-      </div>
+      {/* ── Ambient Emerald Dawn Aurora Horizon Glow ── */}
+      <div className="hero-horizon-glow" aria-hidden="true" />
     </section>
   )
 }

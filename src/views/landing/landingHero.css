@@ -13,7 +13,7 @@
        160ms–200ms cubic-bezier(0.16, 1, 0.3, 1) on explicit properties only.
 ───────────────────────────────────────────────────────────────────────── */
 
-/* Full-Screen Hero Viewport (edge-to-edge, minimum 100vh, seamless dissolve into light sections) */
+/* Full-Screen Hero Viewport (edge-to-edge, minimum 100vh, seamless vertical dégradé into light canvas) */
 .hero-fullscreen-stage {
   position: relative;
   width: 100%;
@@ -22,10 +22,24 @@
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
-  background: linear-gradient(155deg, #070a12 0%, #0d1322 38%, #161e31 72%, #1e263d 100%);
+  background: linear-gradient(
+    180deg,
+    #070a12 0%,
+    #070a12 28%,
+    #0d1424 42%,
+    #131c2e 54%,
+    #1c273e 65%,
+    #2a3b5c 76%,
+    #41577c 85%,
+    #6982a5 91%,
+    #a1b6d2 95%,
+    #dbe5f1 97.5%,
+    #f4fbf9 99%,
+    #f8fafc 100%
+  );
   border-bottom: none;
   padding-top: calc(72px + 2rem);
-  padding-bottom: 0;
+  padding-bottom: 2.5rem;
 }
 
 /* Atmosphere anchor */
@@ -46,8 +60,8 @@
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 94%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 94%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 48%, transparent 78%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 48%, transparent 78%);
 }
 
 .hero-stars {
@@ -756,59 +770,36 @@
   }
 }
 
-/* ── Multi-Stage Atmospheric Dissolve Apron ──────────────────────────────
-   Seamlessly melts the deep-space cosmos (#070a12 -> #1e263d) into the
-   subsequent light section canvas (#f8fafc) through an organic 11-stage
-   dusk-to-dawn horizon ramp. Strictly token-locked to DESIGN.md.
+/* ── Ambient Emerald Dawn Aurora Horizon Glow ──────────────────────────
+   Softly radiates emerald-teal ambient light at the horizon boundary where
+   the hero cosmos dissolves into the daylight application canvas.
    ───────────────────────────────────────────────────────────────────────── */
-.hero-stage-dissolve {
-  position: relative;
-  width: 100%;
-  height: 180px;
-  margin-top: 1.5rem;
-  z-index: 2;
-  pointer-events: none;
-  overflow: hidden;
-  background: linear-gradient(
-    180deg,
-    #1e263d 0%,
-    #232d45 12%,
-    #293652 24%,
-    #354464 36%,
-    #47587c 48%,
-    #607399 60%,
-    #8599be 72%,
-    #b4c4dd 82%,
-    #dbe4ef 90%,
-    #edf2f7 95%,
-    #f4fbf9 98%,
-    #f8fafc 100%
-  );
-}
-
-/* Ambient Emerald Dawn Aurora Glow at the Horizon */
-.hero-stage-dissolve-glow {
+.hero-horizon-glow {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 320px;
   background: radial-gradient(
-    ellipse 75% 85% at 50% 0%,
+    ellipse 85% 75% at 50% 100%,
     rgba(58, 179, 151, 0.22) 0%,
-    rgba(58, 168, 173, 0.1) 45%,
-    transparent 75%
+    rgba(58, 168, 173, 0.08) 50%,
+    transparent 80%
   );
   mix-blend-mode: screen;
   pointer-events: none;
+  z-index: 1;
 }
 
 /* ── Responsive ── */
 @media (max-width: 991.98px) {
   .hero-fullscreen-stage {
     padding-top: calc(72px + 1.5rem);
+    padding-bottom: 2rem;
     min-height: auto;
   }
-  .hero-stage-dissolve {
-    height: 130px;
-    margin-top: 1rem;
+  .hero-horizon-glow {
+    height: 220px;
   }
   .hero-orbit-2 {
     display: none;
@@ -825,10 +816,10 @@
 @media (max-width: 575.98px) {
   .hero-fullscreen-stage {
     padding-top: calc(72px + 1rem);
+    padding-bottom: 1.75rem;
   }
-  .hero-stage-dissolve {
-    height: 90px;
-    margin-top: 0.75rem;
+  .hero-horizon-glow {
+    height: 160px;
   }
   .hero-dispatcher-card {
     padding: 1.25rem 1.25rem 1.6rem;

@@ -8,7 +8,8 @@ import { LogoSvg } from './LogoSvg'
 
 /** Scroll distance before the bar takes on its frosted surface. */
 const SETTLE_AT_PX = 24
-const NAVBAR_HEIGHT_PX = 72
+/** Distance from hero bottom where the dawn horizon morphs into daylight frosted glass. */
+const LIGHT_TRANSITION_TRIGGER_PX = 180
 
 export interface LandingNavProps {
   /** A session exists — the auth actions become a dashboard link. */
@@ -52,27 +53,27 @@ export function LandingNav({ user, activeSection }: LandingNavProps) {
       setSettled(true)
 
       // Detect whether the navbar is currently over a light content section.
-      // We inspect the bottom boundary of the hero section relative to navbar height.
-      // Hysteresis buffer (24px) prevents any single-pixel toggling or flicker on boundaries.
+      // We inspect the bottom boundary of the hero section relative to the dawn dissolve horizon.
+      // Hysteresis buffer (40px) prevents any single-pixel toggling or flicker on boundaries.
       const heroEl = document.getElementById('main-landing-content')
       if (heroEl) {
         const rect = heroEl.getBoundingClientRect()
         if (lastInLight) {
-          // Returning back up into hero
-          if (rect.bottom > NAVBAR_HEIGHT_PX + 24) {
+          // Returning back up into dark hero body
+          if (rect.bottom > LIGHT_TRANSITION_TRIGGER_PX + 40) {
             lastInLight = false
             setInLightSection(false)
           }
         } else {
-          // Crossing down into light section
-          if (rect.bottom <= NAVBAR_HEIGHT_PX) {
+          // Crossing dawn horizon down into light content sections
+          if (rect.bottom <= LIGHT_TRANSITION_TRIGGER_PX) {
             lastInLight = true
             setInLightSection(true)
           }
         }
       } else {
         // Fallback: estimate viewport height if hero element isn't in DOM
-        const fallbackLight = scrollY > (window.innerHeight || 800) - NAVBAR_HEIGHT_PX
+        const fallbackLight = scrollY > (window.innerHeight || 800) - LIGHT_TRANSITION_TRIGGER_PX
         lastInLight = fallbackLight
         setInLightSection(fallbackLight)
       }
