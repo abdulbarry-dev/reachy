@@ -6,8 +6,9 @@ import { EASE_OUT_EXPO } from './landingMotion'
 import { LANDING_SECTIONS } from './sections'
 import { LogoSvg } from './LogoSvg'
 
-/** Scroll distance before the bar takes on its solid surface. */
-const SETTLE_AT_PX = 40
+/** Scroll distance before the bar takes on its frosted surface. */
+const SETTLE_AT_PX = 24
+const NAVBAR_HEIGHT_PX = 72
 
 export interface LandingNavProps {
   /** A session exists — the auth actions become a dashboard link. */
@@ -17,24 +18,73 @@ export interface LandingNavProps {
 }
 
 /**
- * Landing header.
+ * Landing header — Context-Aware Chameleon (Option 1).
  *
- * Deliberately not a floating card: no radius, no elevation, no border while the
- * page is at rest. It is a full-bleed rule of type that shares the hero's exact
- * left and right content edges, and only grows a hairline and a surface once
- * content starts passing beneath it. The accent shows up twice — the current
- * section's underline and the primary action — and nowhere else.
+ * It adapts dynamically to the section currently passing beneath it:
+ * - Over dark hero stage (0px): 100% transparent with white text & mint indicators.
+ * - Scrolling inside dark hero (>24px up to hero exit): Deep-space dark glass
+ *   HUD with frosted blur, mint hairline, and crisp white typography.
+ * - Scrolling into light content sections (Features, Playground, etc.): Seamlessly
+ *   interpolates to light daylight frosted glass with slate typography.
  */
 export function LandingNav({ user, activeSection }: LandingNavProps) {
   const [settled, setSettled] = useState(false)
+  const [inLightSection, setInLightSection] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const closeDrawer = useCallback(() => setDrawerOpen(false), [])
 
   useEffect(() => {
-    const onScroll = () => setSettled(window.scrollY > SETTLE_AT_PX)
+    let lastInLight = false
+
+    const onScroll = () => {
+      const scrollY = typeof window !== 'undefined' ? window.scrollY : 0
+
+      // STRICT TOP GUARD: When at the top of the page (or during rubber-band overscroll <= 0),
+      // the navbar is ALWAYS 100% transparent with white/mint typography over the dark hero cosmos.
+      // It must NEVER flip to light theme or dark text at the top.
+      if (scrollY <= SETTLE_AT_PX) {
+        setSettled(false)
+        setInLightSection(false)
+        lastInLight = false
+        return
+      }
+
+      setSettled(true)
+
+      // Detect whether the navbar is currently over a light content section.
+      // We inspect the bottom boundary of the hero section relative to navbar height.
+      // Hysteresis buffer (24px) prevents any single-pixel toggling or flicker on boundaries.
+      const heroEl = document.getElementById('main-landing-content')
+      if (heroEl) {
+        const rect = heroEl.getBoundingClientRect()
+        if (lastInLight) {
+          // Returning back up into hero
+          if (rect.bottom > NAVBAR_HEIGHT_PX + 24) {
+            lastInLight = false
+            setInLightSection(false)
+          }
+        } else {
+          // Crossing down into light section
+          if (rect.bottom <= NAVBAR_HEIGHT_PX) {
+            lastInLight = true
+            setInLightSection(true)
+          }
+        }
+      } else {
+        // Fallback: estimate viewport height if hero element isn't in DOM
+        const fallbackLight = scrollY > (window.innerHeight || 800) - NAVBAR_HEIGHT_PX
+        lastInLight = fallbackLight
+        setInLightSection(fallbackLight)
+      }
+    }
+
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
   }, [])
 
   // The drawer covers the page, so page scroll must stop behind it.
@@ -51,9 +101,12 @@ export function LandingNav({ user, activeSection }: LandingNavProps) {
     }
   }, [drawerOpen, closeDrawer])
 
+  const themeClass = inLightSection ? 'nav-theme-light' : 'nav-theme-dark'
+  const scrolledClass = settled ? 'is-scrolled' : ''
+
   return (
     <>
-      <header className={`lp-navbar fixed-top ${settled ? 'is-scrolled' : ''}`}>
+      <header className={`lp-navbar fixed-top ${themeClass} ${scrolledClass}`}>
         <Container>
           <div className="lp-navbar-inner">
             <Link href="/" className="lp-brand" aria-label="Reachy home">

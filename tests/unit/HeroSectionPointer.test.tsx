@@ -19,10 +19,12 @@ const mocks = vi.hoisted(() => ({
     timeline: vi.fn(),
     to: vi.fn(),
     from: vi.fn(),
+    fromTo: vi.fn(),
     set: vi.fn(),
     quickTo: vi.fn(),
   },
   SplitText: { create: vi.fn() },
+  ScrollTrigger: { create: vi.fn(() => ({ kill: vi.fn() })) },
 }))
 
 vi.mock('../../src/lib/gsap', async () => {
@@ -30,6 +32,7 @@ vi.mock('../../src/lib/gsap', async () => {
   return {
     gsap: mocks.gsap,
     SplitText: mocks.SplitText,
+    ScrollTrigger: mocks.ScrollTrigger,
     // Mirror useGSAP's "run once on mount" behaviour: re-running on every
     // render would stack duplicate listeners and hide coalescing bugs.
     useGSAP: (callback: () => void) => {

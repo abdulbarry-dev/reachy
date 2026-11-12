@@ -121,10 +121,8 @@ describe('HeroSection', () => {
   it('allows interactive switching across the three pipeline steps', async () => {
     const user = userEvent.setup()
     renderHero()
-    await expectVisibleSoon(() => screen.getByText(/connect smtp/i))
-
-    const step1 = screen.getByRole('button', { name: /step 01.*connect smtp/i })
-    const step2 = screen.getByRole('button', { name: /step 02.*personalize/i })
+    const step1 = await screen.findByRole('button', { name: /step 01.*connect smtp/i }, { timeout: 4000 })
+    const step2 = await screen.findByRole('button', { name: /step 02.*personalize/i }, { timeout: 4000 })
     expect(step1).toHaveAttribute('aria-current', 'step')
 
     await user.click(step2)

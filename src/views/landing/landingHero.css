@@ -13,7 +13,7 @@
        160ms–200ms cubic-bezier(0.16, 1, 0.3, 1) on explicit properties only.
 ───────────────────────────────────────────────────────────────────────── */
 
-/* Full-Screen Hero Viewport (edge-to-edge, minimum 100vh, no section drop-shadow) */
+/* Full-Screen Hero Viewport (edge-to-edge, minimum 100vh, seamless dissolve into light sections) */
 .hero-fullscreen-stage {
   position: relative;
   width: 100%;
@@ -23,9 +23,9 @@
   justify-content: space-between;
   overflow: hidden;
   background: linear-gradient(155deg, #070a12 0%, #0d1322 38%, #161e31 72%, #1e263d 100%);
-  border-bottom: 1px solid rgba(58, 179, 151, 0.16);
+  border-bottom: none;
   padding-top: calc(72px + 2rem);
-  padding-bottom: 1.75rem;
+  padding-bottom: 0;
 }
 
 /* Atmosphere anchor */
@@ -46,6 +46,8 @@
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 94%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 94%);
 }
 
 .hero-stars {
@@ -754,11 +756,59 @@
   }
 }
 
+/* ── Multi-Stage Atmospheric Dissolve Apron ──────────────────────────────
+   Seamlessly melts the deep-space cosmos (#070a12 -> #1e263d) into the
+   subsequent light section canvas (#f8fafc) through an organic 11-stage
+   dusk-to-dawn horizon ramp. Strictly token-locked to DESIGN.md.
+   ───────────────────────────────────────────────────────────────────────── */
+.hero-stage-dissolve {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  margin-top: 1.5rem;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    #1e263d 0%,
+    #232d45 12%,
+    #293652 24%,
+    #354464 36%,
+    #47587c 48%,
+    #607399 60%,
+    #8599be 72%,
+    #b4c4dd 82%,
+    #dbe4ef 90%,
+    #edf2f7 95%,
+    #f4fbf9 98%,
+    #f8fafc 100%
+  );
+}
+
+/* Ambient Emerald Dawn Aurora Glow at the Horizon */
+.hero-stage-dissolve-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 75% 85% at 50% 0%,
+    rgba(58, 179, 151, 0.22) 0%,
+    rgba(58, 168, 173, 0.1) 45%,
+    transparent 75%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
 /* ── Responsive ── */
 @media (max-width: 991.98px) {
   .hero-fullscreen-stage {
     padding-top: calc(72px + 1.5rem);
     min-height: auto;
+  }
+  .hero-stage-dissolve {
+    height: 130px;
+    margin-top: 1rem;
   }
   .hero-orbit-2 {
     display: none;
@@ -775,7 +825,10 @@
 @media (max-width: 575.98px) {
   .hero-fullscreen-stage {
     padding-top: calc(72px + 1rem);
-    padding-bottom: 1.5rem;
+  }
+  .hero-stage-dissolve {
+    height: 90px;
+    margin-top: 0.75rem;
   }
   .hero-dispatcher-card {
     padding: 1.25rem 1.25rem 1.6rem;

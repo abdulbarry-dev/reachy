@@ -1,7 +1,7 @@
 import { startTransition, useCallback, useRef, useState } from 'react'
 import { Col, Container, Row, Button } from 'react-bootstrap'
 import { useRouter } from 'next/navigation'
-import { gsap, SplitText, useGSAP } from '../../lib/gsap'
+import { gsap, ScrollTrigger, SplitText, useGSAP } from '../../lib/gsap'
 import { StarfieldCanvas } from './StarfieldCanvas'
 import { useCounter } from './useCounter'
 import './landingHero.css'
@@ -268,6 +268,23 @@ export function HeroSection() {
             },
           ]
 
+          // 6. Horizon Dissolve ScrollTrigger: subtly blooms the emerald dawn aura as the user scrolls
+          const glowEl = card?.querySelector<HTMLElement>('.hero-stage-dissolve-glow')
+          if (glowEl) {
+            const glowTrigger = ScrollTrigger.create({
+              trigger: '.hero-stage-dissolve',
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: 1.2,
+              animation: gsap.fromTo(
+                glowEl,
+                { opacity: 0.5, scaleY: 0.85 },
+                { opacity: 1, scaleY: 1.2, ease: 'power1.out' },
+              ),
+            })
+            cleanups.push(() => glowTrigger.kill())
+          }
+
           if (!conditions.finePointer || !card) {
             return () => cleanups.forEach((fn) => fn())
           }
@@ -530,6 +547,11 @@ export function HeroSection() {
             </div>
           </div>
         </Container>
+      </div>
+
+      {/* ── Stage-by-Stage Atmospheric Dissolve Apron ── */}
+      <div className="hero-stage-dissolve" aria-hidden="true">
+        <div className="hero-stage-dissolve-glow" />
       </div>
     </section>
   )
