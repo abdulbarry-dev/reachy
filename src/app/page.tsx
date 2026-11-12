@@ -1,5 +1,9 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { LandingPage } from '../views/LandingPage'
+
+export const viewport: Viewport = {
+  themeColor: '#070a12',
+}
 
 export const metadata: Metadata = {
   title: 'Reachy - Modern Cold Email Automation',

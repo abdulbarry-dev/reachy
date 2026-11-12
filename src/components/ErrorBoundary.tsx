@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { ErrorView } from './ErrorView'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -32,8 +33,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // Keep the stack in the console for development and for error reporting.
-    console.error('Unhandled render error', error, info.componentStack)
+    // Keep stack strictly in dev console, never in DOM or user-facing state
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Unhandled render error', error, info.componentStack)
+    }
   }
 
   private handleRetry = () => {
@@ -53,27 +56,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     const chunkFailure = isChunkLoadError(error)
 
     return (
-      <div className="d-flex align-items-center justify-content-center p-4" style={{ minHeight: 320 }}>
-        <div className="card-reachy border-0 p-4 p-sm-5 text-center" role="alert">
-          <div className="empty-state-icon mb-3">
-            <i className="bi bi-exclamation-triangle" aria-hidden="true" />
-          </div>
-          <h2 className="page-title h4 mb-2">Something went wrong</h2>
-          <p className="text-muted small mb-4">
-            {chunkFailure
-              ? 'This part of the app could not be downloaded. Reloading usually fixes it.'
-              : 'The page hit an unexpected error. You can try again without losing your session.'}
-          </p>
-          <button
-            type="button"
-            className="btn-reachy-outline btn-reachy-sm gap-1"
-            onClick={this.handleRetry}
-          >
-            <i className={`bi ${chunkFailure ? 'bi-arrow-clockwise' : 'bi-arrow-repeat'}`} aria-hidden="true" />
-            <span>{chunkFailure ? 'Reload page' : 'Try again'}</span>
-          </button>
-        </div>
-      </div>
+      <ErrorView
+        statusCode={chunkFailure ? 419 : 500}
+        error={error}
+        title="Something went wrong"
+        message={
+          chunkFailure
+            ? 'This part of the app could not be downloaded. Reloading usually fixes it.'
+            : 'The page hit an unexpected error. You can try again without losing your session.'
+        }
+        primaryCtaLabel={chunkFailure ? 'Reload page' : 'Try again'}
+        onReset={this.handleRetry}
+        fullPage={false}
+      />
     )
   }
 }

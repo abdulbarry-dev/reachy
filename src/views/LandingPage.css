@@ -13,6 +13,14 @@
   --lp-glow: rgba(58, 179, 151, 0.15);
 }
 
+/* Ensure the canvas behind and above the dark hero matches deep-space cosmos #070a12,
+   completely eliminating any white overscroll gap when pulling past the top */
+html:has(.landing-wrapper),
+html:has(.landing-wrapper) body {
+  background-color: #070a12 !important;
+  overscroll-behavior-y: none;
+}
+
 .landing-wrapper {
   background-color: #f8fafc;
   color: var(--lp-dark-slate);
@@ -20,6 +28,20 @@
   overflow-x: clip;
   position: relative;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Seamless cosmos underlay extending 200vh above the hero to guarantee zero white gap */
+.landing-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -200vh;
+  left: 0;
+  right: 0;
+  height: 200vh;
+  background-color: #070a12;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Scroll Progress Bar (GSAP ScrollTrigger Scrubbed) */
