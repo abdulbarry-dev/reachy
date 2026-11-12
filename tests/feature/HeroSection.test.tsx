@@ -102,9 +102,34 @@ describe('HeroSection', () => {
     expect(screen.getByText('Sent')).toBeInTheDocument()
     expect(screen.getByText('Replies')).toBeInTheDocument()
     expect(screen.getByText('Inbox Pl.')).toBeInTheDocument()
+    expect(screen.getByText(/sent matching template/i)).toBeVisible()
+    expect(screen.getByText('john@stripe.com')).toBeVisible()
     expect(container.querySelector('.hero-dispatcher-card')).not.toBeNull()
     expect(container.querySelector('.hero-terminal')).not.toBeNull()
+    expect(container.querySelector('.hero-terminal-progress')).not.toBeNull()
     expect(container.querySelector('.btn-hero-secondary')).not.toBeNull()
+  })
+
+  it('does not apply 3D tilt transforms to the dispatcher card wrapper', async () => {
+    const { container } = renderHero()
+    await expectVisibleSoon(() => screen.getByText(/campaign dispatcher/i))
+    const wrapper = container.querySelector('.hero-mockup-wrapper') as HTMLElement
+    expect(wrapper).not.toBeNull()
+    expect(wrapper.style.transformStyle).not.toBe('preserve-3d')
+  })
+
+  it('allows interactive switching across the three pipeline steps', async () => {
+    const user = userEvent.setup()
+    renderHero()
+    await expectVisibleSoon(() => screen.getByText(/connect smtp/i))
+
+    const step1 = screen.getByRole('button', { name: /step 01.*connect smtp/i })
+    const step2 = screen.getByRole('button', { name: /step 02.*personalize/i })
+    expect(step1).toHaveAttribute('aria-current', 'step')
+
+    await user.click(step2)
+    expect(step2).toHaveAttribute('aria-current', 'step')
+    expect(step1).not.toHaveAttribute('aria-current')
   })
 
   it('keeps the vault guarantee visible', async () => {

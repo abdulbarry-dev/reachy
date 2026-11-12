@@ -1,29 +1,31 @@
-import { useEffect, useRef, useState } from 'react'
+import { startTransition, useCallback, useRef, useState } from 'react'
 import { Col, Container, Row, Button } from 'react-bootstrap'
 import { useRouter } from 'next/navigation'
-// Two motion systems coexist by intent (DESIGN.md section 6):
-// - GSAP drives the hero atmosphere (aurora, starfield, entrance, parallax)
-// - Framer Motion drives the small hero widgets and the rest of the page
-import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion'
 import { gsap, SplitText, useGSAP } from '../../lib/gsap'
 import { StarfieldCanvas } from './StarfieldCanvas'
-import { EASE_OUT_EXPO } from './landingMotion'
 import { useCounter } from './useCounter'
 import './landingHero.css'
 
-// ─── Hero mock data ──────────────────────────────────────────────────────────
+// ─── Hero mock data (hoisted at module scope per vercel-react-best-practices) ─
 
-const MOCK_DISPATCH_LOGS = [
-  { email: 'john@stripe.com', status: 'Queued', time: 'Just now' },
-  { email: 'clara@vercel.com', status: 'Sent', time: '1m ago' },
-  { email: 'marcus@figma.com', status: 'Sent', time: '2m ago' },
-  { email: 'sarah@airbnb.com', status: 'Sent', time: '3m ago' }
+interface DispatchLogItem {
+  email: string
+  status: 'Queued' | 'Sent'
+  time: string
+  stepIdx: number
+}
+
+const MOCK_DISPATCH_LOGS: readonly DispatchLogItem[] = [
+  { email: 'john@stripe.com', status: 'Queued', time: 'Just now', stepIdx: 0 },
+  { email: 'clara@vercel.com', status: 'Sent', time: '1m ago', stepIdx: 1 },
+  { email: 'marcus@figma.com', status: 'Sent', time: '2m ago', stepIdx: 2 },
+  { email: 'sarah@airbnb.com', status: 'Sent', time: '3m ago', stepIdx: 2 },
 ]
 
 const HERO_STEPS = [
-  { num: 'STEP 01', name: 'Connect SMTP', active: true },
-  { num: 'STEP 02', name: 'Personalize', active: false },
-  { num: 'STEP 03', name: 'Schedule Net', active: false }
+  { num: 'STEP 01', name: 'Connect SMTP' },
+  { num: 'STEP 02', name: 'Personalize' },
+  { num: 'STEP 03', name: 'Schedule Net' },
 ] as const
 
 interface TrustSignal {
@@ -32,18 +34,12 @@ interface TrustSignal {
   code: string | null
 }
 
-const TRUST_SIGNALS: TrustSignal[] = [
-  { icon: 'bi-google text-danger', label: 'Gmail Integration', code: null },
-  { icon: 'bi-shield-lock-fill text-primary', label: 'Supabase Vault', code: null },
-  { icon: 'bi-cpu-fill text-warning', label: 'Deno Edge Runtime', code: null },
-  { icon: 'bi-clock-history text-success', label: 'Scheduling', code: 'pg_cron' },
+const TRUST_SIGNALS: readonly TrustSignal[] = [
+  { icon: 'bi-google hero-trust-icon-gmail', label: 'Gmail Integration', code: null },
+  { icon: 'bi-shield-lock-fill hero-trust-icon-vault', label: 'Supabase Vault', code: null },
+  { icon: 'bi-cpu-fill hero-trust-icon-deno', label: 'Deno Edge Runtime', code: null },
+  { icon: 'bi-clock-history hero-trust-icon-cron', label: 'Scheduling', code: 'pg_cron' },
 ]
-
-// ─── Utility ────────────────────────────────────────────────────────────────
-
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
 
 /**
  * Counter formatters live at module scope so their identity is stable: a new
@@ -52,99 +48,79 @@ function prefersReducedMotion(): boolean {
 const formatInteger = (value: number) => String(value)
 const formatPercentTenths = (value: number) => `${(value / 10).toFixed(1)}%`
 
-// ─── Tilt Hook (cursor tracking, disabled under reduced motion) ──────────────
-
-function useTilt() {
-  const ref = useRef<HTMLDivElement>(null)
-  const mouseX = useSpring(0, { stiffness: 200, damping: 30 })
-  const mouseY = useSpring(0, { stiffness: 200, damping: 30 })
-
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], ['8deg', '-8deg'])
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], ['-8deg', '8deg'])
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el || prefersReducedMotion()) return
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = el.getBoundingClientRect()
-      mouseX.set((e.clientX - rect.left) / rect.width - 0.5)
-      mouseY.set((e.clientY - rect.top) / rect.height - 0.5)
-    }
-    const handleMouseLeave = () => {
-      mouseX.set(0)
-      mouseY.set(0)
-    }
-
-    el.addEventListener('mousemove', handleMouseMove)
-    el.addEventListener('mouseleave', handleMouseLeave)
-    return () => {
-      el.removeEventListener('mousemove', handleMouseMove)
-      el.removeEventListener('mouseleave', handleMouseLeave)
-    }
-  }, [mouseX, mouseY])
-
-  return { ref, rotateX, rotateY }
-}
-
-const HERO_STAR_COUNT = 110
+const HERO_STAR_COUNT = 105
+const DISPATCH_CYCLE_SECONDS = 3.8
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function HeroSection() {
   const router = useRouter()
   const [dispatchLogIdx, setDispatchLogIdx] = useState(0)
-  const [heroVisible, setHeroVisible] = useState(false)
+  const [activeStepIdx, setActiveStepIdx] = useState(0)
 
-  const cardRef = useRef<HTMLDivElement | null>(null)
-  const heroRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLElement | null>(null)
+  const terminalBodyRef = useRef<HTMLDivElement | null>(null)
+  const terminalProgressRef = useRef<HTMLDivElement | null>(null)
+  const stepSelectHandlerRef = useRef<((idx: number) => void) | null>(null)
 
-  const { ref: tiltRef, rotateX, rotateY } = useTilt()
-  const sentRef = useCounter(142, 1200, heroVisible, formatInteger)
-  const replyRef = useCounter(246, 1400, heroVisible, formatPercentTenths)
-  const inboxRef = useCounter(992, 1600, heroVisible, formatPercentTenths)
+  // Above-the-fold counters start immediately on mount; SSR & reduced-motion
+  // render the target values immediately with zero layout shift.
+  const sentRef = useCounter(142, 1200, true, formatInteger)
+  const replyRef = useCounter(246, 1400, true, formatPercentTenths)
+  const inboxRef = useCounter(992, 1600, true, formatPercentTenths)
 
-  // ── Hero visibility (counters) ──
-  useEffect(() => {
-    const el = heroRef.current
-    if (!el || !('IntersectionObserver' in window)) {
-      setHeroVisible(true)
-      return
-    }
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) setHeroVisible(true)
-    }, { threshold: 0.4 })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
+  const handlePrimaryAction = useCallback(() => {
+    startTransition(() => {
+      router.push('/signup')
+    })
+  }, [router])
 
-  // ── Dispatch log rotation ──
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDispatchLogIdx((prev) => (prev + 1) % MOCK_DISPATCH_LOGS.length)
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // ── GSAP atmosphere: entrance, aurora drift, orbits, pointer parallax ──
+  // ── Unified GSAP Choreography: entrance timeline, live console loop, parallax ──
   useGSAP(
-    () => {
+    (_context, contextSafe) => {
+      const safe = contextSafe ?? ((fn) => fn)
+
+      // Context-safe interactive step selector (also callable when reduced-motion is on)
+      stepSelectHandlerRef.current = safe((nextStepIdx: number) => {
+        setActiveStepIdx(nextStepIdx)
+        setDispatchLogIdx(nextStepIdx % MOCK_DISPATCH_LOGS.length)
+
+        const bodyEl = terminalBodyRef.current
+        const progressEl = terminalProgressRef.current
+        const reduced =
+          typeof window !== 'undefined' &&
+          typeof window.matchMedia === 'function' &&
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+        if (reduced || !bodyEl) return
+
+        gsap.killTweensOf(bodyEl)
+        gsap.fromTo(
+          bodyEl,
+          { autoAlpha: 0, y: 6 },
+          { autoAlpha: 1, y: 0, duration: 0.28, ease: 'power3.out', overwrite: true },
+        )
+        if (progressEl) {
+          gsap.fromTo(
+            progressEl,
+            { scaleX: 0 },
+            { scaleX: 1, duration: DISPATCH_CYCLE_SECONDS, ease: 'none', overwrite: true },
+          )
+        }
+      })
+
       const matchMedia = gsap.matchMedia()
 
       matchMedia.add(
         {
           motionOK: '(prefers-reduced-motion: no-preference)',
-          finePointer: '(hover: hover) and (pointer: fine)'
+          finePointer: '(hover: hover) and (pointer: fine)',
         },
         (context) => {
           const conditions = context.conditions ?? {}
           if (!conditions.motionOK) return
 
-          // Hero title — SplitText masked line reveal (once, on load).
-          // autoSplit re-splits when the web font finishes loading; the tween
-          // returned from onSplit() is cleaned up and time-synced per re-split.
-          // A re-split after the reveal has started settles the lines instead of
-          // replaying them, which would flash the headline mid-animation.
+          // 1. Hero title — SplitText masked line reveal (once, on load).
           let titleRevealed = false
 
           const titleSplit = SplitText.create('.hero-title', {
@@ -158,9 +134,9 @@ export function HeroSection() {
               }
 
               return gsap.from(self.lines, {
-                yPercent: 110,
-                duration: 0.8,
-                stagger: 0.09,
+                yPercent: 108,
+                duration: 0.75,
+                stagger: 0.08,
                 ease: 'power3.out',
                 onStart: () => {
                   titleRevealed = true
@@ -169,49 +145,147 @@ export function HeroSection() {
             },
           })
 
-          // Entrance — once, on load, top-down
+          // 2. Master Entrance Timeline — single cohesive page-load choreography
           gsap
-            .timeline({ defaults: { ease: 'power3.out', duration: 0.7 } })
-            .from('.hero-badge', { y: 16, autoAlpha: 0, duration: 0.55 }, 0)
-            .from(['.hero-lead', '.hero-actions'], { y: 24, autoAlpha: 0, stagger: 0.09 }, 0.1)
-            .from('.hero-step-item', { y: 18, autoAlpha: 0, stagger: 0.08, duration: 0.55 }, 0.22)
-            .from('.hero-mockup-entrance', { y: 32, scale: 0.97, autoAlpha: 0, duration: 0.85, ease: 'power2.out' }, 0.2)
-            .from('.hero-glow-ring', { autoAlpha: 0, duration: 1.4, ease: 'power1.inOut' }, 0.3)
+            .timeline({ defaults: { ease: 'power3.out', duration: 0.65 } })
+            .from('.hero-badge', { y: 12, autoAlpha: 0, duration: 0.48 }, 0)
+            .from(['.hero-lead', '.hero-actions'], { y: 18, autoAlpha: 0, stagger: 0.08, duration: 0.56 }, 0.1)
+            .from('.hero-step-item', { x: -10, autoAlpha: 0, stagger: 0.07, duration: 0.48 }, 0.18)
+            .from(
+              '.hero-mockup-entrance',
+              { y: 22, scale: 0.985, autoAlpha: 0, duration: 0.72, ease: 'power3.out' },
+              0.14,
+            )
+            .from(
+              '.hero-stat-cell',
+              { y: 10, autoAlpha: 0, stagger: 0.06, duration: 0.45 },
+              0.32,
+            )
+            .from(
+              '.hero-floating-banner',
+              { y: 12, autoAlpha: 0, duration: 0.52 },
+              0.42,
+            )
+            .from(
+              '.hero-trust-item',
+              { y: 10, autoAlpha: 0, stagger: 0.05, duration: 0.45 },
+              0.32,
+            )
 
-          // Aurora — large, slow, sine-driven drifts (8–16 s loops)
-          gsap.to('.hero-aurora-1', { xPercent: 12, yPercent: -8, scale: 1.12, duration: 13, ease: 'sine.inOut', repeat: -1, yoyo: true })
-          gsap.to('.hero-aurora-2', { xPercent: -10, yPercent: 9, scale: 1.08, duration: 16, ease: 'sine.inOut', repeat: -1, yoyo: true })
-          gsap.to('.hero-aurora-3', { xPercent: 8, yPercent: 6, duration: 10.5, ease: 'sine.inOut', repeat: -1, yoyo: true })
+          // 3. Ambient Aurora Drift — slow, low-amplitude sine loops on compositor
+          gsap.to('.hero-aurora-1', {
+            xPercent: 10,
+            yPercent: -6,
+            scale: 1.08,
+            duration: 14,
+            ease: 'sine.inOut',
+            repeat: -1,
+            yoyo: true,
+          })
+          gsap.to('.hero-aurora-2', {
+            xPercent: -8,
+            yPercent: 7,
+            scale: 1.06,
+            duration: 17,
+            ease: 'sine.inOut',
+            repeat: -1,
+            yoyo: true,
+          })
+          gsap.to('.hero-aurora-3', {
+            xPercent: 6,
+            yPercent: 5,
+            duration: 12,
+            ease: 'sine.inOut',
+            repeat: -1,
+            yoyo: true,
+          })
 
-          // Orbits — the dispatcher's two slow satellites
-          gsap.to('.hero-orbit-1', { rotation: 360, duration: 26, ease: 'none', repeat: -1 })
-          gsap.to('.hero-orbit-2', { rotation: -360, duration: 38, ease: 'none', repeat: -1 })
+          // 4. Subtle Orbit Rings — slow satellite rotation around the console
+          gsap.to('.hero-orbit-1', { rotation: 360, duration: 34, ease: 'none', repeat: -1 })
+          gsap.to('.hero-orbit-2', { rotation: -360, duration: 48, ease: 'none', repeat: -1 })
 
-          const cleanups: Array<() => void> = [() => titleSplit.revert()]
+          // 5. GSAP-driven Dispatch Cadence Loop (pauses on console/step hover)
+          const progressEl = terminalProgressRef.current
+          const bodyEl = terminalBodyRef.current
 
-          if (!conditions.finePointer) return () => cleanups.forEach((fn) => fn())
+          const advanceDispatchLog = safe(() => {
+            if (!bodyEl) return
+            gsap.to(bodyEl, {
+              autoAlpha: 0,
+              y: -5,
+              duration: 0.16,
+              ease: 'power2.in',
+              onComplete: () => {
+                setDispatchLogIdx((prev) => {
+                  const next = (prev + 1) % MOCK_DISPATCH_LOGS.length
+                  setActiveStepIdx(MOCK_DISPATCH_LOGS[next].stepIdx)
+                  return next
+                })
+                gsap.set(bodyEl, { autoAlpha: 0, y: 6 })
+                gsap.to(bodyEl, { autoAlpha: 1, y: 0, duration: 0.3, ease: 'power3.out' })
+              },
+            })
+          })
 
-          // Pointer parallax — one queued tween per layer, created once (quickTo)
+          if (progressEl) {
+            gsap.set(progressEl, { scaleX: 0 })
+          }
+          const cycleTween = gsap.to(progressEl ?? {}, {
+            scaleX: 1,
+            duration: DISPATCH_CYCLE_SECONDS,
+            ease: 'none',
+            repeat: -1,
+            onRepeat: advanceDispatchLog,
+          })
+
           const card = cardRef.current
-          if (!card) return () => cleanups.forEach((fn) => fn())
+          const interactiveTargets = card
+            ? Array.from(
+                card.querySelectorAll<HTMLElement>('.hero-dispatcher-card, .hero-steps-indicator'),
+              )
+            : []
 
+          const pauseCycle = () => {
+            cycleTween.pause?.()
+          }
+          const resumeCycle = () => {
+            cycleTween.play?.()
+          }
+
+          interactiveTargets.forEach((el) => {
+            el.addEventListener('pointerenter', pauseCycle)
+            el.addEventListener('pointerleave', resumeCycle)
+          })
+
+          const cleanups: Array<() => void> = [
+            () => titleSplit.revert(),
+            () => cycleTween.kill?.(),
+            () => {
+              interactiveTargets.forEach((el) => {
+                el.removeEventListener('pointerenter', pauseCycle)
+                el.removeEventListener('pointerleave', resumeCycle)
+              })
+            },
+          ]
+
+          if (!conditions.finePointer || !card) {
+            return () => cleanups.forEach((fn) => fn())
+          }
+
+          // 6. Pointer Depth Parallax on background atmosphere only (never tilts UI cards)
           const layers = [
             { el: card.querySelector<HTMLElement>('.hero-aurora-1'), depth: 12 },
             { el: card.querySelector<HTMLElement>('.hero-aurora-2'), depth: 18 },
             { el: card.querySelector<HTMLElement>('.hero-aurora-3'), depth: 8 },
-            { el: card.querySelector<HTMLElement>('.hero-stars'), depth: 6 }
-          ].filter((layer): layer is { el: HTMLElement, depth: number } => layer.el !== null)
+            { el: card.querySelector<HTMLElement>('.hero-stars'), depth: 6 },
+          ].filter((layer): layer is { el: HTMLElement; depth: number } => layer.el !== null)
 
           const movers = layers.map(({ el, depth }) => ({
-            toX: gsap.quickTo(el, 'x', { duration: 0.8, ease: 'power2.out' }),
-            toY: gsap.quickTo(el, 'y', { duration: 0.8, ease: 'power2.out' }),
-            depth
+            toX: gsap.quickTo(el, 'x', { duration: 0.75, ease: 'power3.out' }),
+            toY: gsap.quickTo(el, 'y', { duration: 0.75, ease: 'power3.out' }),
+            depth,
           }))
 
-          // A trackpad emits pointermove well above frame rate, and a burst
-          // used to mean one layout read plus four tween writes per event.
-          // Coalesce into one frame: measure once per burst, apply the latest
-          // position only.
           let frame = 0
           let pending: { x: number; y: number } | null = null
           let rect: DOMRect | null = null
@@ -256,8 +330,6 @@ export function HeroSection() {
             }
           }
 
-          // Scrolling and resizing move the stage under the pointer, so the
-          // cached rect is invalidated rather than re-measured per event.
           const invalidateRect = () => {
             rectDirty = true
           }
@@ -275,13 +347,15 @@ export function HeroSection() {
             if (frame !== 0) cancelAnimationFrame(frame)
           })
           return () => cleanups.forEach((fn) => fn())
-        }
+        },
       )
 
       return () => matchMedia.revert()
     },
-    { scope: cardRef }
+    { scope: cardRef },
   )
+
+  const currentLog = MOCK_DISPATCH_LOGS[dispatchLogIdx]
 
   return (
     <section
@@ -289,45 +363,55 @@ export function HeroSection() {
       className="hero-fullscreen-stage hero-container-card"
       ref={cardRef}
     >
-      <div ref={heroRef} className="hero-atmosphere-anchor">
+      <div className="hero-atmosphere-anchor">
         {/* ── Atmosphere ── */}
         <div className="hero-cosmos" aria-hidden="true">
           <StarfieldCanvas className="hero-stars" starCount={HERO_STAR_COUNT} />
           <div className="hero-aurora hero-aurora-1" />
           <div className="hero-aurora hero-aurora-2" />
           <div className="hero-aurora hero-aurora-3" />
+          <div className="hero-grid-overlay" />
           <div className="hero-vignette" />
         </div>
-        <div className="hero-glow-ring" aria-hidden="true" />
 
-        <Container fluid="xl" className="hero-fullscreen-inner">
+        {/* Standard <Container> matches LandingNav for equal left and right content edges */}
+        <Container className="hero-fullscreen-inner">
           <Row className="align-items-center hero-content-grid">
-            {/* Vertical step indicators */}
+            {/* Vertical interactive step indicators */}
             <Col lg={2} className="d-none d-lg-block">
-              <div className="hero-steps-indicator">
-                {HERO_STEPS.map((step) => (
-                  <div key={step.num} className={`hero-step-item ${step.active ? 'active' : ''}`}>
-                    <div className="hero-step-num">{step.num}</div>
-                    <div className="hero-step-name">{step.name}</div>
-                  </div>
-                ))}
+              <div className="hero-steps-indicator" role="group" aria-label="Outreach pipeline steps">
+                {HERO_STEPS.map((step, idx) => {
+                  const isActive = activeStepIdx === idx
+                  return (
+                    <button
+                      key={step.num}
+                      type="button"
+                      className={`hero-step-item ${isActive ? 'active' : ''}`}
+                      aria-current={isActive ? 'step' : undefined}
+                      onClick={() => stepSelectHandlerRef.current?.(idx)}
+                    >
+                      <span className="hero-step-num">{step.num}</span>
+                      <span className="hero-step-name">{step.name}</span>
+                    </button>
+                  )
+                })}
               </div>
             </Col>
 
             {/* Hero copy */}
-            <Col lg={5} md={12} className="pe-lg-3 text-center text-lg-start">
-              <div>
+            <Col lg={5} md={12} className="pe-lg-4 text-center text-lg-start">
+              <div className="hero-copy-block">
                 <span className="lp-badge hero-badge mb-3">
-                  <i className="bi bi-rocket-takeoff-fill text-gradient" /> Deliverability First
+                  <i className="bi bi-rocket-takeoff-fill text-gradient" aria-hidden="true" /> Deliverability First
                 </span>
-                <h1 className="hero-title mb-4">
-                  Reach Prospects' <span className="text-gradient">Inbox</span>, Not the Spam Folder.
+                <h1 className="hero-title mb-3">
+                  Reach Prospects&apos; <span className="text-gradient">Inbox</span>, Not the Spam Folder.
                 </h1>
-                <p className="hero-lead mb-4 pb-2">
+                <p className="hero-lead mb-4">
                   Supercharge your cold outreach with automated sending delays, safe daily caps, and encrypted app password management. Built securely on Supabase.
                 </p>
                 <div className="hero-actions d-flex flex-wrap justify-content-center justify-content-lg-start align-items-center gap-3">
-                  <Button className="btn-lp-primary" onClick={() => router.push('/signup')}>
+                  <Button className="btn-lp-primary btn-hero-primary" onClick={handlePrimaryAction}>
                     Start Free Campaign
                   </Button>
                   <a href="#playground" className="btn-lp-outline btn-hero-secondary text-decoration-none">
@@ -337,7 +421,7 @@ export function HeroSection() {
               </div>
             </Col>
 
-            {/* Hero Mockup — floating in orbit */}
+            {/* Hero Console Mockup — disciplined planar surface, zero 3D tilt */}
             <Col lg={5} className="mt-5 mt-lg-0">
               <div className="hero-mockup-stage">
                 <div className="hero-orbit hero-orbit-1" aria-hidden="true">
@@ -348,11 +432,7 @@ export function HeroSection() {
                 </div>
 
                 <div className="hero-mockup-entrance">
-                  <motion.div
-                    className="hero-mockup-wrapper"
-                    ref={tiltRef as React.RefObject<HTMLDivElement>}
-                    style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 800 }}
-                  >
+                  <div className="hero-mockup-wrapper">
                     <div className="hero-dispatcher-card">
                       <div className="hero-dispatcher-header">
                         <div className="d-flex align-items-center gap-2">
@@ -362,61 +442,68 @@ export function HeroSection() {
                         <span className="hero-dispatcher-badge">Active</span>
                       </div>
 
-                      {/* Animated stat counters */}
+                      {/* Animated stat counters — pre-populated in JSX for SSR & instant paint */}
                       <div className="hero-dispatcher-stats">
                         <div className="hero-stat-cell">
                           <div className="hero-stat-label">Sent</div>
-                          <strong className="hero-stat-value hero-stat-value-dark" ref={sentRef} />
+                          <strong className="hero-stat-value hero-stat-value-dark" ref={sentRef}>
+                            142
+                          </strong>
                         </div>
                         <div className="hero-stat-cell">
                           <div className="hero-stat-label">Replies</div>
-                          <strong className="hero-stat-value hero-stat-value-emerald" ref={replyRef} />
+                          <strong className="hero-stat-value hero-stat-value-emerald" ref={replyRef}>
+                            24.6%
+                          </strong>
                         </div>
                         <div className="hero-stat-cell">
                           <div className="hero-stat-label">Inbox Pl.</div>
-                          <strong className="hero-stat-value text-gradient" ref={inboxRef} />
+                          <strong className="hero-stat-value text-gradient" ref={inboxRef}>
+                            99.2%
+                          </strong>
                         </div>
                       </div>
 
-                      {/* Live dispatch log */}
+                      {/* Live dispatch log — pure GSAP transition + cadence progress rail */}
                       <div className="hero-terminal font-monospace">
                         <div className="hero-terminal-header">
                           <span>LIVE DISPATCH STATUS</span>
-                          <span className="spinner-border spinner-border-sm hero-terminal-spinner" role="status" />
+                          <span className="hero-terminal-pulse" role="status" aria-label="Dispatching active" />
                         </div>
-                        <AnimatePresence mode="wait">
-                          <motion.div
-                            key={dispatchLogIdx}
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6 }}
-                            transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
-                            className="hero-terminal-body"
-                          >
-                            <div className="hero-log-sent">✉️ Sent matching template!</div>
-                            <div className="hero-log-to">To: <span>{MOCK_DISPATCH_LOGS[dispatchLogIdx].email}</span></div>
-                            <div className="hero-log-status">Status: <span>{MOCK_DISPATCH_LOGS[dispatchLogIdx].status}</span></div>
-                            <div className="hero-log-meta font-monospace">Throttler delay: 60 seconds</div>
-                          </motion.div>
-                        </AnimatePresence>
+                        <div className="hero-terminal-progress-track" aria-hidden="true">
+                          <div ref={terminalProgressRef} className="hero-terminal-progress" />
+                        </div>
+                        <div ref={terminalBodyRef} className="hero-terminal-body">
+                          <div className="hero-log-sent">
+                            <i className="bi bi-envelope-check-fill me-2" aria-hidden="true" />
+                            Sent matching template!
+                          </div>
+                          <div className="hero-log-to">
+                            To: <span>{currentLog.email}</span>
+                          </div>
+                          <div className="hero-log-status">
+                            Status: <span>{currentLog.status}</span>
+                          </div>
+                          <div className="hero-log-meta font-monospace">
+                            Throttler delay: 60 seconds
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Floating security badge */}
-                      <motion.div
-                        className="hero-floating-banner"
-                        animate={{ y: [0, -6, 0] }}
-                        transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
-                      >
-                        <div className="floating-banner-icon">
+                      {/* Grounded security badge — tactile layered elevation, no infinite bounce */}
+                      <div className="hero-floating-banner">
+                        <div className="floating-banner-icon" aria-hidden="true">
                           <i className="bi bi-shield-check" />
                         </div>
                         <div>
                           <div className="floating-banner-title">Zero Plaintext Storage</div>
-                          <div className="floating-banner-subtitle">SMTP Passwords encrypted in Supabase Vault</div>
+                          <div className="floating-banner-subtitle">
+                            SMTP Passwords encrypted in Supabase Vault
+                          </div>
                         </div>
-                      </motion.div>
+                      </div>
                     </div>
-                  </motion.div>
+                  </div>
                 </div>
               </div>
             </Col>
@@ -428,8 +515,8 @@ export function HeroSection() {
               <span className="hero-trust-label">Secured With:</span>
               <div className="hero-trust-items">
                 {TRUST_SIGNALS.map((item) => (
-                  <div key={item.label} className="hero-trust-item" data-motion="reveal-above-fold">
-                    <i className={`bi ${item.icon}`} />
+                  <div key={item.label} className="hero-trust-item">
+                    <i className={`bi ${item.icon}`} aria-hidden="true" />
                     {item.code ? (
                       <>
                         <span className="hero-trust-pill">{item.code}</span> {item.label}

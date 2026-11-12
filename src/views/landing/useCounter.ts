@@ -33,6 +33,16 @@ export function useCounter(
       return
     }
 
+    const reducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (reducedMotion) {
+      node.textContent = format(target)
+      return
+    }
+
     let startTime: number | null = null
     let frame = 0
 
