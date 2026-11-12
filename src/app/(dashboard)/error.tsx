@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ErrorView } from '../../components/ErrorView'
 import { DevErrorView } from '../../components/DevErrorView'
 
@@ -13,12 +13,6 @@ export default function DashboardError({
 }) {
   const [showProductionPreview, setShowProductionPreview] = useState(false)
   const isDev = process.env.NODE_ENV === 'development'
-
-  useEffect(() => {
-    if (isDev) {
-      console.error('[DashboardError Caught in Dev]', error)
-    }
-  }, [error, isDev])
 
   if (isDev && !showProductionPreview) {
     return (

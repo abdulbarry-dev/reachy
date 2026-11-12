@@ -129,8 +129,7 @@ export function HeroSection() {
             autoSplit: true,
             onSplit: (self) => {
               if (titleRevealed) {
-                gsap.set(self.lines, { yPercent: 0 })
-                return
+                return gsap.set(self.lines, { yPercent: 0 })
               }
 
               return gsap.from(self.lines, {
@@ -218,9 +217,9 @@ export function HeroSection() {
               onComplete: () => {
                 setDispatchLogIdx((prev) => {
                   const next = (prev + 1) % MOCK_DISPATCH_LOGS.length
-                  setActiveStepIdx(MOCK_DISPATCH_LOGS[next].stepIdx)
                   return next
                 })
+                setActiveStepIdx((prev) => (prev + 1) % HERO_STEPS.length)
                 gsap.set(bodyEl, { autoAlpha: 0, y: 6 })
                 gsap.to(bodyEl, { autoAlpha: 1, y: 0, duration: 0.3, ease: 'power3.out' })
               },
