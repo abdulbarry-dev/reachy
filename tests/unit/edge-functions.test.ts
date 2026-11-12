@@ -4,6 +4,7 @@ import { getEdgeFunctionUrl, invokeEdgeFunction } from '../../src/lib/edge-funct
 import { supabase } from '../../src/lib/supabase'
 
 vi.mock('../../src/lib/supabase', () => ({
+  SUPABASE_URL: 'https://abc.supabase.co',
   supabase: { auth: { getSession: vi.fn() } },
 }))
 
@@ -23,12 +24,10 @@ function response(body: string, init: { ok?: boolean } = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.stubEnv('VITE_SUPABASE_URL', 'https://abc.supabase.co')
   ;(supabase.auth.getSession as Mock).mockResolvedValue(sessionResponse(SESSION_TOKEN))
 })
 
 afterEach(() => {
-  vi.unstubAllEnvs()
   vi.unstubAllGlobals()
 })
 
@@ -129,18 +128,7 @@ describe('invokeEdgeFunction', () => {
 })
 
 describe('getEdgeFunctionUrl', () => {
-  it('builds URL from env', () => {
-    vi.stubEnv('VITE_SUPABASE_URL', 'https://abc.supabase.co')
+  it('builds the function URL from the configured project URL', () => {
     expect(getEdgeFunctionUrl('create-campaign')).toBe('https://abc.supabase.co/functions/v1/create-campaign')
-  })
-
-  it('strips trailing slash', () => {
-    vi.stubEnv('VITE_SUPABASE_URL', 'https://abc.supabase.co/')
-    expect(getEdgeFunctionUrl('test-fn')).toBe('https://abc.supabase.co/functions/v1/test-fn')
-  })
-
-  it('handles missing env', () => {
-    vi.stubEnv('VITE_SUPABASE_URL', '')
-    expect(getEdgeFunctionUrl('fn')).toBe('/functions/v1/fn')
   })
 })

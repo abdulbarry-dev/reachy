@@ -1,0 +1,1211 @@
+/* Landing Page CSS */
+
+:root {
+  --lp-dark-slate: #1e2332;
+  --lp-slate-800: #282e44;
+  --lp-slate-700: #334155;
+  --lp-primary: #3AB397;
+  --lp-primary-rgb: 58, 179, 151;
+  --lp-secondary: #3AA8AD;
+  --lp-secondary-rgb: 58, 168, 173;
+  --lp-mint: #eefdf9;
+  --lp-border-alpha: rgba(58, 179, 151, 0.12);
+  --lp-glow: rgba(58, 179, 151, 0.15);
+}
+
+.landing-wrapper {
+  background-color: #f8fafc;
+  color: var(--lp-dark-slate);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: clip;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Scroll Progress Bar (GSAP ScrollTrigger Scrubbed) */
+.landing-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3AB397 0%, #3AA8AD 100%);
+  transform-origin: left center;
+  transform: scaleX(0);
+  z-index: 10001;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(58, 179, 151, 0.4);
+}
+
+/* Background Blobs */
+.lp-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.4;
+}
+.lp-blob-1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(58, 179, 151, 0.3) 0%, rgba(58, 168, 173, 0.1) 70%);
+  top: 10%;
+  right: -5%;
+  animation: float-blob-1 25s infinite alternate ease-in-out;
+}
+.lp-blob-2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(58, 168, 173, 0.25) 0%, rgba(58, 179, 151, 0.05) 70%);
+  top: 45%;
+  left: -10%;
+  animation: float-blob-2 30s infinite alternate ease-in-out;
+}
+.lp-blob-3 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(58, 179, 151, 0.2) 0%, rgba(58, 168, 173, 0.05) 70%);
+  bottom: 10%;
+  right: 10%;
+}
+
+@keyframes float-blob-1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-50px, 80px) scale(1.1); }
+  100% { transform: translate(30px, -40px) scale(0.9); }
+}
+@keyframes float-blob-2 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(60px, -50px) scale(0.95); }
+  100% { transform: translate(-40px, 60px) scale(1.05); }
+}
+
+/* ── Landing header ───────────────────────────────────────────────────────────
+   Page chrome, not a widget. Full-bleed, no radius, no elevation, no border at
+   rest. It shares the hero's exact content edges and only gains a surface and a
+   hairline once content passes beneath it. The accent appears twice — the active
+   section's underline and the primary action — and nowhere else.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.lp-navbar {
+  z-index: 100;
+  background-color: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+/* When at top of page over full-screen dark hero cosmos */
+.lp-navbar:not(.is-scrolled) .lp-brand {
+  color: #ffffff !important;
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-link {
+  color: #cbd5e1;
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-link:hover,
+.lp-navbar:not(.is-scrolled) .lp-nav-link[aria-current='true'] {
+  color: #ffffff;
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-link::after {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-link[aria-current='true']::after {
+  background-color: var(--lp-primary);
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-login {
+  color: #cbd5e1;
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-login:hover {
+  color: #ffffff;
+}
+
+.lp-navbar:not(.is-scrolled) .lp-mobile-menu-btn {
+  color: #ffffff;
+}
+
+.lp-navbar.is-scrolled {
+  background-color: rgba(255, 255, 255, 0.88);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+.lp-navbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 2.25rem;
+  height: 72px;
+}
+
+.lp-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--lp-dark-slate);
+  text-decoration: none !important;
+}
+
+.lp-logo-svg {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.lp-brand .lp-logo-svg {
+  width: 28px;
+  height: 28px;
+}
+
+.lp-nav-desktop,
+.lp-nav-desktop-actions {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .lp-nav-desktop {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+  }
+
+  .lp-nav-desktop-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-left: auto;
+  }
+}
+
+.lp-nav-link {
+  position: relative;
+  padding: 0.35rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--lp-slate-700);
+  text-decoration: none !important;
+  white-space: nowrap;
+  transition: color 0.18s ease;
+}
+
+/* One indicator only: a hairline that draws under the section you are reading
+   and previews under the one you point at. No pill, no wash, no sliding blob. */
+.lp-nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.5px;
+  background-color: rgba(15, 23, 42, 0.28);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lp-nav-link:hover {
+  color: var(--lp-dark-slate);
+}
+
+.lp-nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+.lp-nav-link[aria-current='true'] {
+  color: var(--lp-dark-slate);
+  font-weight: 600;
+}
+
+.lp-nav-link[aria-current='true']::after {
+  transform: scaleX(1);
+  background-color: var(--lp-primary);
+}
+
+.lp-nav-login {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--lp-slate-700);
+  text-decoration: none !important;
+  transition: color 0.18s ease;
+}
+
+.lp-nav-login:hover {
+  color: var(--lp-dark-slate);
+}
+
+/* The one saturated element in the header. Button-sized radius, flat fill, no
+   glow: elevation on page chrome is what makes a header look like a template. */
+.btn-lp-nav-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 1.15rem;
+  border-radius: 0.75rem;
+  background-image: linear-gradient(135deg, #3AB397 0%, #3AA8AD 100%);
+  color: #ffffff !important;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  text-decoration: none !important;
+  transition:
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-lp-nav-cta:hover {
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.btn-lp-nav-cta:active {
+  transform: translateY(0);
+  filter: brightness(0.97);
+  transition-duration: 0.06s;
+}
+
+/* Mobile trigger — 44px touch target, no chip around the glyph. */
+.lp-mobile-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--lp-dark-slate);
+  font-size: 1.35rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.lp-mobile-menu-btn:hover {
+  color: var(--lp-primary);
+}
+
+.lp-brand:focus-visible,
+.lp-nav-link:focus-visible,
+.lp-nav-login:focus-visible,
+.btn-lp-nav-cta:focus-visible,
+.lp-mobile-menu-btn:focus-visible,
+.lp-sidebar-close:focus-visible,
+.lp-sidebar-link:focus-visible,
+.lp-sidebar-auth-btn:focus-visible {
+  outline: 2px solid var(--lp-dark-slate);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-navbar,
+  .lp-nav-link,
+  .lp-nav-link::after,
+  .lp-nav-login,
+  .btn-lp-nav-cta,
+  .lp-mobile-menu-btn,
+  .lp-sidebar,
+  .lp-sidebar-link,
+  .lp-sidebar-auth-btn {
+    transition: none;
+  }
+}
+
+/* ── Mobile drawer ────────────────────────────────────────────────────────────
+   A contents page: flat white surface, one hairline, type at reading size. No
+   gradient, no radius, no shadow — the scrim already does the separating.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.lp-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background-color: rgba(15, 23, 42, 0.45);
+}
+
+.lp-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(86vw, 340px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
+  overscroll-behavior: contain;
+}
+
+.lp-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+  padding: 0 1.1rem 0 1.5rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+  flex-shrink: 0;
+}
+
+.lp-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--lp-dark-slate);
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.lp-sidebar-brand .lp-logo-svg {
+  width: 26px;
+  height: 26px;
+}
+
+.lp-sidebar-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--lp-slate-700);
+  font-size: 1.05rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.lp-sidebar-close:hover {
+  color: var(--lp-dark-slate);
+}
+
+.lp-sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.lp-sidebar-link {
+  display: flex;
+  align-items: center;
+  min-height: 60px;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  color: var(--lp-dark-slate);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-decoration: none !important;
+  transition: color 0.18s ease;
+}
+
+.lp-sidebar-link:hover,
+.lp-sidebar-link[aria-current='true'] {
+  color: var(--lp-primary);
+}
+
+.lp-sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 1.25rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
+  flex-shrink: 0;
+}
+
+.lp-sidebar-auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 1rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--reachy-border-color);
+  background-color: #ffffff;
+  color: var(--lp-dark-slate);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.lp-sidebar-auth-btn:hover {
+  border-color: var(--lp-primary);
+  color: var(--lp-primary);
+}
+
+.lp-sidebar-auth-btn-primary {
+  border-color: transparent;
+  background-image: linear-gradient(135deg, #3AB397 0%, #3AA8AD 100%);
+  color: #ffffff;
+}
+
+.lp-sidebar-auth-btn-primary:hover {
+  border-color: transparent;
+  color: #ffffff;
+  filter: brightness(0.93);
+}
+
+/* Buttons & Badges — same grammar as the app's Reachy button system
+   (0.75rem radius, hover steps up 1px, press returns to rest, 160ms) */
+.btn-lp-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0 1.75rem;
+  border: none;
+  border-radius: 0.75rem;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  background: linear-gradient(135deg, var(--lp-primary) 0%, var(--lp-secondary) 100%);
+  box-shadow: 0 4px 16px rgba(58, 179, 151, 0.35);
+  transition:
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-lp-primary:hover {
+  color: #fff;
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 6px 20px rgba(58, 179, 151, 0.35);
+}
+.btn-lp-primary:active {
+  transform: translateY(0);
+  filter: brightness(0.97);
+  box-shadow: 0 2px 8px rgba(58, 179, 151, 0.3);
+  transition-duration: 0.06s;
+}
+.btn-lp-primary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(58, 179, 151, 0.15),
+    0 4px 16px rgba(58, 179, 151, 0.35);
+}
+.btn-lp-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0 1.5rem;
+  border: 1.5px solid var(--lp-primary);
+  border-radius: 0.75rem;
+  color: var(--lp-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  background-color: transparent;
+  transition:
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-lp-outline:hover {
+  color: var(--lp-primary);
+  background-color: rgba(58, 179, 151, 0.1);
+  transform: translateY(-1px);
+}
+.btn-lp-outline:active {
+  background-color: rgba(58, 179, 151, 0.14);
+  transform: translateY(0);
+  transition-duration: 0.06s;
+}
+.btn-lp-outline:focus-visible {
+  outline: 2px solid var(--lp-primary);
+  outline-offset: 3px;
+}
+.lp-badge {
+  background-color: rgba(58, 179, 151, 0.1);
+  color: var(--lp-primary);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.45rem 1rem;
+  border-radius: 50rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(58, 179, 151, 0.15);
+}
+
+/* Sections General */
+.lp-section {
+  padding: 5rem 0;
+  position: relative;
+  z-index: 1;
+  /* Clears the floating bar when an anchor is jumped to */
+  scroll-margin-top: 5rem;
+}
+
+/* Alternating section tint — keeps the scroll rhythm continuous instead of
+   dead white bands between sections. Mint alpha of the brand primary. */
+.lp-section-tint {
+  background: linear-gradient(180deg, rgba(58, 179, 151, 0.05) 0%, rgba(58, 179, 151, 0.02) 100%);
+  border-top: 1px solid rgba(58, 179, 151, 0.08);
+  border-bottom: 1px solid rgba(58, 179, 151, 0.08);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--lp-primary) 0%, var(--lp-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Logos Section */
+.logos-slider-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 2rem;
+  opacity: 0.92;
+  padding: 1.35rem 1.5rem;
+  background-color: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(58, 179, 151, 0.14);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03);
+}
+.logo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  color: var(--lp-dark-slate);
+}
+/* Inline code pill used for technical identifiers like pg_cron */
+.logo-code-pill {
+  font-family: ui-monospace, SFMono-Regular, 'Fira Mono', 'Roboto Mono', Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #16a085;
+  background-color: rgba(58, 179, 151, 0.09);
+  border: 1px solid rgba(58, 179, 151, 0.2);
+  border-radius: 0.4rem;
+  padding: 0.1rem 0.45rem;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+/* Code tag used inside feature card h4 headings */
+.feature-code-tag {
+  font-family: ui-monospace, SFMono-Regular, 'Fira Mono', 'Roboto Mono', Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  font-weight: 700;
+  color: var(--lp-primary);
+  background-color: rgba(58, 179, 151, 0.08);
+  border: 1px solid rgba(58, 179, 151, 0.18);
+  border-radius: 0.4rem;
+  padding: 0.05em 0.4em;
+  letter-spacing: -0.01em;
+}
+
+/* Dispatch rhythm diagram (Dispatching feature card) — visualizes the pg_cron
+   tick: scheduler → 60s tick → send. CSS-only, no JavaScript loop implied. */
+.dispatch-diagram {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed rgba(15, 23, 42, 0.08);
+}
+.dd-node {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(58, 179, 151, 0.08);
+  border: 1px solid rgba(58, 179, 151, 0.18);
+  color: var(--lp-primary);
+  font-size: 0.95rem;
+}
+.dd-wire {
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.06), rgba(15, 23, 42, 0.14));
+  position: relative;
+  border-radius: 1px;
+}
+.dd-pulse {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: var(--lp-primary);
+  box-shadow: 0 0 8px rgba(58, 179, 151, 0.6);
+  animation: dd-pulse-travel 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.dd-wire-late .dd-pulse {
+  animation-delay: 1.2s;
+}
+.dd-tick {
+  flex: 0 0 auto;
+  font-family: ui-monospace, SFMono-Regular, 'Fira Mono', 'Roboto Mono', Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--lp-slate-700);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 50rem;
+  padding: 0.3rem 0.7rem;
+}
+@keyframes dd-pulse-travel {
+  0% { left: 0; opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { left: calc(100% - 7px); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dd-pulse {
+    display: none;
+  }
+}
+
+/* Section Header */
+.section-header {
+  max-width: 650px;
+  margin: 0 auto 4rem auto;
+}
+.section-header h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Features Grid */
+.feature-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  border-radius: 1.75rem;
+  padding: 2.25rem;
+  height: 100%;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.02);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(58, 179, 151, 0.08);
+  border-color: rgba(58, 179, 151, 0.2);
+}
+.feature-icon-box {
+  width: 56px;
+  height: 56px;
+  border-radius: 1.25rem;
+  background-color: var(--lp-mint);
+  color: var(--lp-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+.feature-card:hover .feature-icon-box {
+  background-color: var(--lp-primary);
+  color: #fff;
+  transform: scale(1.05);
+}
+.feature-badge {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--lp-secondary);
+}
+
+/* Workflow Steps */
+.step-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  height: 100%;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.02);
+  position: relative;
+  transition: all 0.3s ease;
+}
+.step-card:hover {
+  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.04);
+}
+.step-card.highlighted {
+  background: linear-gradient(135deg, var(--lp-primary) 0%, var(--lp-secondary) 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 20px 40px rgba(58, 179, 151, 0.25);
+}
+.step-num-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgba(58, 179, 151, 0.1);
+  color: var(--lp-primary);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+.step-card.highlighted .step-num-badge {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+.step-card.highlighted .step-title {
+  color: #ffffff !important;
+}
+.step-card.highlighted .step-desc {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+.step-link {
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: var(--lp-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 1rem;
+  transition: gap 0.2s ease;
+}
+.step-link:hover {
+  color: var(--lp-secondary);
+  gap: 0.5rem;
+}
+.step-card.highlighted .step-link {
+  color: #ffffff;
+}
+.step-card.highlighted .step-link:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Interactive Templates Widget */
+.widget-container {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 2rem;
+  padding: 2.25rem;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.03);
+}
+.widget-var-badge {
+  background-color: rgba(58, 179, 151, 0.08);
+  border: 1px dashed rgba(58, 179, 151, 0.3);
+  color: var(--lp-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+.widget-var-badge:hover {
+  background-color: var(--lp-primary);
+  color: #fff;
+  border-style: solid;
+  transform: translateY(-1px);
+}
+.widget-preview-box {
+  background-color: var(--lp-dark-slate);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  color: #f8fafc;
+  min-height: 220px;
+  font-family: ui-monospace, SFMono-Regular, 'Fira Mono', 'Roboto Mono', Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+  position: relative;
+}
+.widget-preview-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+/* Prospect picker pills (playground) — brand tokens, no Bootstrap color classes */
+.lp-prospect-pill {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.4rem 1rem;
+  border-radius: 50rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background-color: #ffffff;
+  color: var(--lp-slate-700);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+}
+.lp-prospect-pill:hover {
+  color: var(--lp-primary);
+  border-color: rgba(58, 179, 151, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(58, 179, 151, 0.15);
+}
+.lp-prospect-pill.active {
+  background-color: var(--lp-primary);
+  border-color: var(--lp-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(58, 179, 151, 0.3);
+}
+.lp-prospect-pill:focus-visible {
+  outline: 2px solid var(--lp-primary);
+  outline-offset: 2px;
+}
+
+/* Info banner in brand mint */
+.lp-info-banner {
+  background-color: rgba(58, 179, 151, 0.08);
+  border: 1px solid rgba(58, 179, 151, 0.15);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  color: var(--lp-slate-700);
+}
+.lp-info-banner i {
+  color: var(--lp-primary);
+}
+
+/* Interactive Safety Gauge */
+.gauge-card {
+  background: linear-gradient(135deg, var(--lp-dark-slate) 0%, var(--lp-slate-800) 100%);
+  color: #ffffff;
+  border-radius: 2rem;
+  padding: 2.5rem;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Gauge cosmos — deep-space echo of the hero, palette-locked (Mission-control
+   accent direction). Decorative bed behind the gauge content. */
+.gauge-cosmos {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.gauge-stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.gauge-content {
+  position: relative;
+  z-index: 1;
+}
+.gauge-aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  opacity: 0.5;
+}
+.gauge-aurora-1 {
+  width: 340px;
+  height: 340px;
+  top: -120px;
+  right: -80px;
+  background: radial-gradient(circle, rgba(var(--lp-primary-rgb), 0.35) 0%, transparent 70%);
+  animation: gauge-aurora-drift-1 14s ease-in-out infinite alternate;
+}
+.gauge-aurora-2 {
+  width: 300px;
+  height: 300px;
+  bottom: -110px;
+  left: -70px;
+  background: radial-gradient(circle, rgba(var(--lp-secondary-rgb), 0.3) 0%, transparent 70%);
+  animation: gauge-aurora-drift-2 17s ease-in-out infinite alternate;
+}
+@keyframes gauge-aurora-drift-1 {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-36px, 28px, 0) scale(1.12); }
+}
+@keyframes gauge-aurora-drift-2 {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(26px, -22px, 0) scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gauge-aurora-1,
+  .gauge-aurora-2 {
+    animation: none;
+  }
+}
+.slider-custom {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 5px;
+  background: #334155;
+}
+.slider-custom:focus-visible {
+  outline: 2px solid var(--lp-primary);
+  outline-offset: 4px;
+}
+.slider-custom::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--lp-primary);
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--lp-primary);
+  transition: transform 0.1s ease;
+}
+.slider-custom::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+.status-badge-lg {
+  padding: 0.75rem 1.25rem;
+  border-radius: 1rem;
+  font-weight: 700;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.status-safe {
+  background-color: rgba(58, 179, 151, 0.15);
+  color: #3AB397;
+  border: 1px solid rgba(58, 179, 151, 0.25);
+}
+.status-warning {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+.status-risky {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* Split Showcase Feature */
+.split-img-card {
+  position: relative;
+  border-radius: 2rem;
+  overflow: hidden;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.1);
+  border: 1px solid rgba(15, 23, 42, 0.05);
+}
+.split-img-card img {
+  width: 100%;
+  height: 480px;
+  object-fit: cover;
+  transition: transform 0.8s ease;
+}
+.split-img-card:hover img {
+  transform: scale(1.03);
+}
+.split-overlay-tag {
+  position: absolute;
+  bottom: 2rem;
+  left: 2rem;
+  background-color: var(--lp-dark-slate);
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+}
+.split-bottom-cta-banner {
+  background: linear-gradient(135deg, #eefdf9 0%, #d8f5ef 100%);
+  border: 1px solid rgba(58, 179, 151, 0.15);
+  border-radius: 1.5rem;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03);
+}
+
+/* Footer styling */
+.lp-footer {
+  background-color: var(--lp-dark-slate);
+  color: #94a3b8;
+  padding: 5rem 0 2rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.lp-footer-brand {
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: #ffffff;
+  text-decoration: none !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.lp-footer-brand:hover {
+  text-decoration: none !important;
+}
+.lp-footer-link {
+  color: #94a3b8;
+  text-decoration: none !important;
+  transition: color 0.2s ease;
+  font-size: 0.95rem;
+}
+.lp-footer-link:hover {
+  color: var(--lp-primary);
+  text-decoration: none !important;
+}
+
+/* Responsive adjustments */
+
+/* Tablet */
+@media (max-width: 991.98px) {
+  .lp-section {
+    padding: 4.5rem 0;
+  }
+  .split-img-card img {
+    height: 350px;
+  }
+  .section-header h2 {
+    font-size: 2.1rem;
+  }
+}
+
+/* Small phones */
+@media (max-width: 575.98px) {
+  .lp-section {
+    padding: 3.5rem 0;
+  }
+  .section-header {
+    margin-bottom: 2.5rem;
+  }
+  .section-header h2 {
+    font-size: 1.65rem;
+  }
+  .section-header p {
+    font-size: 0.9rem;
+  }
+  .feature-card {
+    padding: 1.75rem;
+    border-radius: 1.25rem;
+  }
+  .step-card {
+    padding: 1.75rem;
+  }
+  .gauge-card {
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+  }
+  .widget-container {
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+  }
+  .split-img-card img {
+    height: 220px;
+  }
+  .split-bottom-cta-banner {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+    padding: 1.25rem;
+  }
+  .split-bottom-cta-banner .btn-lp-primary {
+    width: 100%;
+  }
+  .logos-slider-container {
+    gap: 1rem;
+    padding: 1rem 0;
+  }
+  .logo-item {
+    font-size: 0.85rem;
+  }
+  .lp-footer {
+    padding: 3rem 0 1.5rem;
+  }
+  .lp-footer-link {
+    font-size: 0.88rem;
+  }
+  .btn-lp-primary,
+  .btn-lp-outline {
+    min-height: 44px;
+    padding: 0 1.25rem;
+    font-size: 0.9375rem;
+  }
+  .lp-badge {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.75rem;
+  }
+  .widget-preview-box {
+    font-size: 0.82rem;
+    padding: 1rem;
+    min-height: 180px;
+  }
+  .split-overlay-tag {
+    left: 1rem;
+    bottom: 1rem;
+    padding: 0.5rem 1rem;
+  }
+  .split-overlay-tag span:first-child {
+    font-size: 1rem !important;
+  }
+}
+
+/* Tiny phones */
+@media (max-width: 399.98px) {
+  .lp-section {
+    padding: 2.5rem 0;
+  }
+  .section-header h2 {
+    font-size: 1.35rem;
+  }
+  .feature-card {
+    padding: 1.25rem;
+  }
+  .step-card {
+    padding: 1.5rem;
+  }
+  .gauge-card {
+    padding: 1.25rem;
+  }
+}

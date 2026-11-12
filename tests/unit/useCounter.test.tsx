@@ -1,6 +1,7 @@
+import { useEffect } from 'react'
 import { render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useCounter } from '../../src/pages/landing/useCounter'
+import { useCounter } from '../../src/views/landing/useCounter'
 
 /**
  * The hero counters run three 1.2–1.6s animations at once. The original
@@ -24,7 +25,9 @@ function Harness({
   format?: (value: number) => string
   target?: number
 }) {
-  renders += 1
+  useEffect(() => {
+    renders += 1
+  })
   const ref = useCounter(target, 1000, started, format)
   return <span ref={ref} />
 }

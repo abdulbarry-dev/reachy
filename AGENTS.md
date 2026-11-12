@@ -3,15 +3,15 @@
 ## Commands
 
 ```sh
-npm run dev       # Vite dev server
-npm run build     # tsc -b && vite build (typecheck required before build)
+npm run dev       # Next.js dev server (next dev)
+npm run build     # Next.js production build (next build)
+npm run start     # Next.js production start (next start)
 npm run lint      # oxlint (not ESLint — uses .oxlintrc.json)
-npm run preview   # vite preview
 npm run test      # vitest (watch mode)
 npm run test:run  # vitest run (CI-friendly)
 npm run coverage  # vitest run --coverage
-npm run lh        # Lighthouse audit (builds, serves dist/, reports to reports/lighthouse/)
-npx tsc -b        # typecheck only (skip build)
+npm run lh        # Lighthouse audit (reports to reports/lighthouse/)
+npx tsc -b        # typecheck only
 
 # `npx tsc --noEmit` checks NOTHING here: the root tsconfig.json has
 # "files": [] and only project references, so it exits 0 regardless.
@@ -20,7 +20,7 @@ npx tsc -b        # typecheck only (skip build)
 
 ## Stack
 
-React 19 + TypeScript 6 + Vite 8 + Redux Toolkit + Supabase + Bootstrap 5 + Framer Motion + Vercel Analytics.
+Next.js 16 (App Router) + React 19 + TypeScript 6 + Redux Toolkit + Supabase + Bootstrap 5 + Framer Motion + Vercel Analytics.
 
 Linter is `oxlint` — no ESLint config. TypeScript has `noUnusedLocals`/`noUnusedParameters` enabled and `verbatimModuleSyntax` (use `import type`).
 
@@ -36,13 +36,14 @@ Linter is `oxlint` — no ESLint config. TypeScript has `noUnusedLocals`/`noUnus
 
 ## Env
 
-`.env` requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Edge Function secrets (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`) are set in Supabase Dashboard, not in `.env`. See `.env.example`.
+`.env` requires `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (also backward-compatible with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`). Edge Function secrets (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`) are set in Supabase Dashboard, not in `.env`. See `.env.example`.
 
 ## Architecture
 
-- **Auth**: Supabase email/password. Session restored on mount in `App.tsx` via `getSession()` + `onAuthStateChange`. `getSession()` rejection is caught to prevent permanent loading state.
-- **Protected routes**: `ProtectedRoute` wrapper checks `state.auth.user`, renders `<Layout />` (sidebar) or redirects to `/login`.
-- **Loading states**: All hooks (`useCampaigns`, `useRecipients`, `useEmailAccounts`) use SWR for data fetching. `fetcher.ts` now throws Supabase errors so they surface in the UI.
+- **App Router**: Next.js 16 under `src/app/`. Server layout (`src/app/layout.tsx`) embeds `Plus_Jakarta_Sans` via `next/font/google`, OpenGraph/Twitter metadata, and wraps client providers (`ClientProviders.tsx`).
+- **Auth**: Supabase email/password. Session restored on mount in `ClientProviders.tsx` via `getSession()` + `onAuthStateChange`.
+- **Protected routes**: `src/app/(dashboard)/layout.tsx` checks `state.auth.user`, renders `<Layout />` (sidebar) or redirects to `/login`.
+- **Loading states**: All hooks (`useCampaigns`, `useRecipients`, `useEmailAccounts`) use SWR for data fetching. `fetcher.ts` throws Supabase errors so they surface in the UI.
 - **Bundle optimization**: Vite `manualChunks` splits vendor code into `vendor-react`, `vendor-ui`, `vendor-supabase`, `vendor-papaparse`, and `vendor-excel`. Excel parsing uses `read-excel-file`, loaded on demand when a user uploads an `.xlsx` file.
 - **Client → Edge Function calls**: Pages call edge functions via `fetch(getEdgeFunctionUrl(name))` passing `Authorization: Bearer ${session.access_token}` — the function uses `supabase.auth.getUser(token)` with the service role key to verify. Response bodies are guarded with `try/catch` before `.json()`. Auth errors return 401; validation errors return 400.
 - **Send pipeline**: Not a loop. `pg_cron` every 60s calls `dispatch-sends` via `pg_net`. Each tick sends exactly one email across all active campaigns (campaigns are processed sequentially and the function returns after the first successful send). Avoids the 150s Edge Function timeout. `dispatch-sends` also reclaims stuck `sending` recipients whose `updated_at` is older than 10 minutes (`claim_pending_recipient` RPC uses `FOR UPDATE SKIP LOCKED`).
@@ -81,20 +82,20 @@ All use `npm:@supabase/supabase-js@2`, `npm:nodemailer@6`, and `https://deno.lan
 
 ## Routes
 
-| Path | Component | Auth |
-|---|---|---|
-| `/` (index) | `<LandingPage />` | Public |
-| `/login` | `<Auth mode="login" />` | Public |
-| `/signup` | `<Auth mode="signup" />` | Public |
-| `/reset-password` | `<Auth mode="reset-password" />` | Public |
-| `/dashboard` | `<Dashboard />` | Protected |
-| `/recipients` | `<Recipients />` | Protected |
-| `/compose` | `<Compose />` | Protected |
-| `/settings` | `<Settings />` | Protected |
-| `/campaigns/:campaignId` | `<CampaignDetail />` | Protected |
-| `*` (catch-all) | Redirect to `/` | Public |
-
-**App.tsx**: `MotionConfig reducedMotion="user"` wraps routes. `AnimatePresence` uses `location.key` for proper exit animations. Duplicate `/` routes consolidated. 404 catch-all added.
+| Path | File / Component | Rendering | SEO / Metadata |
+|---|---|---|---|
+| `/` | `src/app/page.tsx` (`<LandingPage />`) | Static (SSG) | Full OpenGraph, Twitter Cards, `SoftwareApplication` JSON-LD |
+| `/login` | `src/app/(auth)/login/page.tsx` | Static + Client Form | Title: `Log In \| Reachy`, robots: `noindex, follow` |
+| `/signup` | `src/app/(auth)/signup/page.tsx` | Static + Client Form | Title: `Sign Up \| Reachy`, meta description, OpenGraph |
+| `/reset-password` | `src/app/(auth)/reset-password/page.tsx` | Static + Client Form | Title: `Reset Password \| Reachy`, robots: `noindex, nofollow` |
+| `/dashboard` | `src/app/(dashboard)/dashboard/page.tsx` | Client (Protected) | Title: `Dashboard \| Reachy`, robots: `noindex` |
+| `/recipients` | `src/app/(dashboard)/recipients/page.tsx` | Client (Protected) | Title: `Recipients \| Reachy`, robots: `noindex` |
+| `/compose` | `src/app/(dashboard)/compose/page.tsx` | Client (Protected) | Title: `Compose Campaign \| Reachy`, robots: `noindex` |
+| `/settings` | `src/app/(dashboard)/settings/page.tsx` | Client (Protected) | Title: `Settings \| Reachy`, robots: `noindex` |
+| `/campaigns/:campaignId` | `src/app/(dashboard)/campaigns/[campaignId]/page.tsx` | Dynamic (Protected) | Title: `Campaign Details \| Reachy`, robots: `noindex` |
+| `*` | `src/app/not-found.tsx` | Static 404 | Custom 404 with home return |
+| `/sitemap.xml` | `src/app/sitemap.ts` | Dynamic XML | Auto-generated indexing map |
+| `/robots.txt` | `src/app/robots.ts` | Dynamic Text | Crawl directives |
 
 ## Redux Store
 
@@ -165,12 +166,16 @@ The following files were confirmed unused and deleted:
 
 ### Required Skill Selection & Design Workflow
 
-For every requested implementation, agents must first assess the task and deliberately select the smallest relevant set of installed skills. Agents have discretion to use or exclude any listed skill; they must not load every skill by default. Select skills whose documented scope directly applies to the requested work (for example, React performance skills for React refactors, GSAP skills for animation work, and UI/UX skills for interface changes). Exclude unrelated skills to keep the workflow focused.
+**`solid` is a mandatory baseline skill.** For every implementation task — writing features, refactoring, reviewing code, debugging, creating tests, or designing architecture — agents MUST load and apply the `solid` skill first. It enforces SOLID principles, TDD (Red-Green-Refactor), clean code practices, and professional software design standards across the entire codebase.
+
+For every requested implementation, agents must first assess the task and deliberately select the smallest relevant set of installed skills beyond `solid`. Agents have discretion to use or exclude any listed skill; they must not load every skill by default. Select skills whose documented scope directly applies to the requested work (for example, React performance skills for React refactors, GSAP skills for animation work, and UI/UX skills for interface changes). Exclude unrelated skills to keep the workflow focused.
 
 Before modifying any UI, CSS, component, or layout code, agents must read `DESIGN.md` and follow it as the authoritative source for typography, including the approved font family, font weights, type scale, line height, letter spacing, and responsive typography rules. A skill may inform implementation technique, but it may never override `DESIGN.md`. All design-system constraints stated earlier in this file remain mandatory: do not introduce unapproved fonts, weights, colors, spacing, radii, shadows, gradients, or UI patterns.
 
 For non-visual work, agents should still apply any relevant engineering skills, while avoiding unnecessary UI/design skills. When a task crosses disciplines, agents may combine the relevant skills and must preserve the existing architecture, accessibility requirements, and `DESIGN.md` compliance.
 
+- `solid` ⭐ **MANDATORY BASELINE** — SOLID principles, TDD, clean code, professional software design. Load this for every implementation task without exception
+- `cra-to-next-migration` — Next.js App Router migration patterns, routing, SSR/SSG, Metadata API, RSC boundaries
 - `vercel-react-best-practices` — React 19 hooks, performance, data fetching, bundle optimization
 - `vercel-composition-patterns` — Compound components, render props, context, slots (React 19 APIs)
 - `vercel-web-design-guidelines` — Design tokens, typography, color systems, accessibility
@@ -180,5 +185,6 @@ For non-visual work, agents should still apply any relevant engineering skills, 
 - `ui-ux-pro-max`, `ui-styling`, `design-system`, `brand`, `slides`, `banner-design` — UI/UX Pro Max multi-discipline design system & styling
 - `frontend-design`, `frontend-design-2` — Anthropic official frontend design best practices
 - `taste-skill` — Taste, aesthetic sensibilities, visual craftsmanship, and UI polish guidelines
+- `security-audit` — Cloudflare multi-phase security audit workflow (reconnaissance, coverage-led hunting, candidate validation, structured findings, verification, and reporting)
 
 Load with `skill("skill-name")` in OpenCode sessions.

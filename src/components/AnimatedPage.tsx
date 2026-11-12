@@ -1,3 +1,5 @@
+'use client'
+
 import { useRef } from 'react'
 import { Container } from 'react-bootstrap'
 import { gsap } from 'gsap'

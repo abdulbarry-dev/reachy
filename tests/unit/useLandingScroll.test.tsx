@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useLandingScroll } from '../../src/pages/landing/useLandingScroll'
+import { useLandingScroll } from '../../src/views/landing/useLandingScroll'
 
 /**
  * Contract tests for the landing scroll choreography, exercised at the GSAP

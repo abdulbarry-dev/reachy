@@ -7,9 +7,9 @@
  *
  *   1. Chrome for Testing is auto-downloaded into `.lighthouse/chrome` on first
  *      run (skipped on later runs). Set CHROME_PATH to use your own Chrome.
- *   2. A production build is run and served with `vite preview` on port 4173
+ *   2. A production build is run and served with `next start` on port 3000
  *      (default) — auditing the dev server gives misleading scores because of
- *      HMR and unminified bundles. `--dev` audits a Vite dev server on 5173.
+ *      HMR and unminified bundles. `--dev` audits a Next.js dev server on 3000.
  *   3. The Lighthouse CLI audits each route, writing an HTML report (and a JSON
  *      one used for the console summary) to `reports/lighthouse/`.
  *
@@ -17,7 +17,7 @@
  *   npm run lh                       # audit production build, public routes
  *   npm run lh -- --open             # ... and open each report in the browser
  *   npm run lh -- --dev              # audit the running dev server instead
- *   npm run lh -- --no-build         # reuse the existing dist/ without rebuilding
+ *   npm run lh -- --no-build         # reuse the existing .next/ without rebuilding
  *   npm run lh -- --desktop          # desktop preset instead of mobile emulation
  *   npm run lh -- --categories=performance,seo
  *   npm run lh -- --url=/login --url=https://deploy-preview-42.vercel.app
@@ -45,8 +45,8 @@ const args = process.argv.slice(2)
  *  set up the Supabase localStorage session needed by protected routes. */
 const DEFAULT_ROUTES = ['/', '/login']
 
-const PROD_PORT = 4173 // vite preview default
-const DEV_PORT = 5173 // vite dev default
+const PROD_PORT = 3000 // next start default
+const DEV_PORT = 3000  // next dev default
 
 const booleanFlags = new Set(['--dev', '--no-build', '--open', '--desktop', '--help'])
 const options = { urls: [] }
@@ -79,8 +79,8 @@ function printHelp() {
 Usage: npm run lh [-- flags]
 
 Flags:
-  --dev                     Audit the Vite dev server (port 5173) instead of the production preview (port 4173). Starts one if none is running.
-  --no-build                Skip \`npm run build\` and audit the existing dist/.
+  --dev                     Audit the Next.js dev server (port 3000) instead of the production server (port 3000). Starts one if none is running.
+  --no-build                Skip \`npm run build\` and audit the existing .next/ build.
   --open                    Open each HTML report in the browser when done.
   --desktop                 Use the desktop preset instead of mobile emulation.
   --categories=<list>       Comma-separated categories (default: performance,accessibility,best-practices,seo).
@@ -147,12 +147,11 @@ function runNpmScript(scriptName) {
   })
 }
 
-/** Starts `vite` or `vite preview` on the fixed port (via its own bin entry so
- *  we can kill exactly the process we started). */
+/** Starts `next dev` or `next start` on the fixed port. */
 function startServer(mode, port) {
-  const viteArgs = mode === 'dev' ? [] : ['preview']
-  viteArgs.push('--port', String(port), '--strictPort')
-  const child = spawn(process.execPath, ['node_modules/vite/bin/vite.js', ...viteArgs], {
+  const nextArgs = mode === 'dev' ? ['dev'] : ['start']
+  nextArgs.push('--port', String(port))
+  const child = spawn(process.execPath, ['node_modules/.bin/next', ...nextArgs], {
     cwd: ROOT,
     stdio: ['ignore', 'inherit', 'inherit'],
   })

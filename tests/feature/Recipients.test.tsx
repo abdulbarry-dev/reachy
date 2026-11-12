@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
-import { Recipients } from '../../src/pages/Recipients'
+import { Recipients } from '../../src/views/Recipients'
 import { store } from '../../src/store'
 import { setRecipients } from '../../src/store/recipientsSlice'
 import { ToastProvider } from '../../src/components/ToastProvider'

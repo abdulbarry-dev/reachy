@@ -11,6 +11,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+function constantTimeCompare(a: string, b: string): boolean {
+  if (!a || !b) return false
+  const aBuf = new TextEncoder().encode(a)
+  const bBuf = new TextEncoder().encode(b)
+  if (aBuf.byteLength !== bBuf.byteLength) return false
+  return crypto.subtle.timingSafeEqual(aBuf, bBuf)
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -37,7 +45,10 @@ serve(async (req) => {
   }
 
   const cronAuth = req.headers.get('x-cron-secret')
-  if (!cronAuth || cronAuth !== CRON_SECRET) {
+  if (!CRON_SECRET) {
+    return jsonResponse({ error: 'Server misconfiguration: CRON_SECRET not set' }, 500)
+  }
+  if (!cronAuth || !constantTimeCompare(cronAuth, CRON_SECRET)) {
     return jsonResponse({ error: 'Unauthorized' }, 401)
   }
 
@@ -70,9 +81,18 @@ serve(async (req) => {
       return jsonResponse({ processed: 0, reason: 'no active campaigns' })
     }
 
-    // Build a map of account -> campaign ids for cap/rate-limit checks
+    // Build a map of account -> ALL campaign ids (including completed/paused)
+    // so per-account daily caps and rate limits account for earlier campaigns.
+    const activeAccountIds = Array.from(new Set(campaigns.map((c) => c.email_account_id)))
+    const { data: allAccountCampaigns, error: allCampaignsError } = await supabase
+      .from('campaigns')
+      .select('id, email_account_id')
+      .in('email_account_id', activeAccountIds)
+
+    if (allCampaignsError) throw new Error(`Account campaigns fetch error: ${allCampaignsError.message}`)
+
     const accountCampaignIds: Record<string, string[]> = {}
-    for (const c of campaigns) {
+    for (const c of allAccountCampaigns ?? campaigns) {
       if (!accountCampaignIds[c.email_account_id]) accountCampaignIds[c.email_account_id] = []
       accountCampaignIds[c.email_account_id].push(c.id)
     }
@@ -109,13 +129,34 @@ async function processCampaign(
   accountCampaignIds: string[],
 ) {
   try {
-    // Per-account daily cap
-    const { count: accountSentToday, error: accountCountError } = await supabase
-      .from('recipients')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'sent')
-      .gte('sent_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-      .in('campaign_id', accountCampaignIds)
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+
+    // Run independent cap & rate-limit checks in parallel (no waterfall)
+    const [
+      { count: accountSentToday, error: accountCountError },
+      { count: sentToday, error: countError },
+      { data: lastAccountSent },
+    ] = await Promise.all([
+      supabase
+        .from('recipients')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'sent')
+        .gte('sent_at', since24h)
+        .in('campaign_id', accountCampaignIds),
+      supabase
+        .from('recipients')
+        .select('*', { count: 'exact', head: true })
+        .eq('campaign_id', campaign.id)
+        .eq('status', 'sent')
+        .gte('sent_at', since24h),
+      supabase
+        .from('recipients')
+        .select('sent_at')
+        .eq('status', 'sent')
+        .in('campaign_id', accountCampaignIds)
+        .order('sent_at', { ascending: false })
+        .limit(1),
+    ])
 
     if (accountCountError) {
       console.error('Account count error:', accountCountError.message)
@@ -125,28 +166,11 @@ async function processCampaign(
     const accountCap = Math.min(campaign.daily_cap, 90)
     if ((accountSentToday ?? 0) >= accountCap) return null
 
-    // Campaign daily cap
-    const { count: sentToday, error: countError } = await supabase
-      .from('recipients')
-      .select('*', { count: 'exact', head: true })
-      .eq('campaign_id', campaign.id)
-      .eq('status', 'sent')
-      .gte('sent_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-
     if (countError) {
       console.error('Campaign count error:', countError.message)
       return null
     }
     if ((sentToday ?? 0) >= campaign.daily_cap) return null
-
-    // Per-account rate limit: time since last send across all campaigns for this account
-    const { data: lastAccountSent } = await supabase
-      .from('recipients')
-      .select('sent_at')
-      .eq('status', 'sent')
-      .in('campaign_id', accountCampaignIds)
-      .order('sent_at', { ascending: false })
-      .limit(1)
 
     if (lastAccountSent && lastAccountSent.length > 0 && lastAccountSent[0].sent_at) {
       const elapsedMs = Date.now() - new Date(lastAccountSent[0].sent_at).getTime()
@@ -205,16 +229,20 @@ async function processCampaign(
     }
 
     const variables = (recipient.variables as Record<string, string>) ?? {}
-    const personalize = (text: string) =>
-      text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m: string, key: string) => {
-        const val = key === 'email' ? recipient.email
-          : key === 'name' ? (recipient.name ?? '')
-          : variables[key] ?? ''
-        return escapeHtml(val)
-      })
+    const resolveVar = (key: string): string =>
+      key === 'email' ? recipient.email
+        : key === 'name' ? (recipient.name ?? '')
+        : variables[key] ?? ''
 
-    const html = personalize(campaign.body_template)
-    const subject = personalize(campaign.subject_template)
+    const html = campaign.body_template.replace(
+      /\{\{\s*(\w+)\s*\}\}/g,
+      (_m: string, key: string) => escapeHtml(resolveVar(key)),
+    )
+    // Subject is a plain-text header: strip CR/LF to prevent header injection without HTML-encoding characters.
+    const subject = campaign.subject_template
+      .replace(/\{\{\s*(\w+)\s*\}\}/g, (_m: string, key: string) => resolveVar(key))
+      .replace(/[\r\n]+/g, ' ')
+      .trim()
 
     const transporter = nodemailer.createTransport({
       host: account.smtp_host || 'smtp.gmail.com',
@@ -230,6 +258,13 @@ async function processCampaign(
         subject,
         html,
       })
+    } catch (sendErr) {
+      const sendErrMsg = sendErr instanceof Error ? sendErr.message : String(sendErr)
+      await supabase
+        .from('recipients')
+        .update({ status: 'failed', error_message: sendErrMsg })
+        .eq('id', recipient.id)
+      return { campaignId: campaign.id, email: recipient.email, status: `failed: ${sendErrMsg}` }
     } finally {
       transporter.close()
     }

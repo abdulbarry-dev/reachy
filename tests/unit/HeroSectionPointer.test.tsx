@@ -1,7 +1,7 @@
 import { fireEvent, render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { HeroSection } from '../../src/pages/landing/HeroSection'
+import { HeroSection } from '../../src/views/landing/HeroSection'
 
 /**
  * The hero's pointer parallax used to read `getBoundingClientRect()` on every
@@ -26,13 +26,19 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('../../src/lib/gsap', async () => {
-  const { useLayoutEffect } = await import('react')
+  const { useLayoutEffect, useRef } = await import('react')
   return {
     gsap: mocks.gsap,
     SplitText: mocks.SplitText,
     // Mirror useGSAP's "run once on mount" behaviour: re-running on every
     // render would stack duplicate listeners and hide coalescing bugs.
-    useGSAP: (callback: () => void) => useLayoutEffect(callback, []),
+    useGSAP: (callback: () => void) => {
+      const cbRef = useRef(callback)
+      cbRef.current = callback
+      useLayoutEffect(() => {
+        cbRef.current()
+      }, [])
+    },
   }
 })
 

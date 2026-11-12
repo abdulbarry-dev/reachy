@@ -11,6 +11,7 @@ export const RECIPIENTS_STORAGE_KEY = 'reachy_recipients_v1'
  * assumed.
  */
 function browserStorage(): Storage | null {
+  if (typeof window === 'undefined') return null
   try {
     return typeof localStorage === 'undefined' ? null : localStorage
   } catch {

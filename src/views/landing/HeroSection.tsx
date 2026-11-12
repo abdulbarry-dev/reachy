@@ -1,0 +1,449 @@
+import { useEffect, useRef, useState } from 'react'
+import { Col, Container, Row, Button } from 'react-bootstrap'
+import { useRouter } from 'next/navigation'
+// Two motion systems coexist by intent (DESIGN.md section 6):
+// - GSAP drives the hero atmosphere (aurora, starfield, entrance, parallax)
+// - Framer Motion drives the small hero widgets and the rest of the page
+import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion'
+import { gsap, SplitText, useGSAP } from '../../lib/gsap'
+import { StarfieldCanvas } from './StarfieldCanvas'
+import { EASE_OUT_EXPO } from './landingMotion'
+import { useCounter } from './useCounter'
+import './landingHero.css'
+
+// ─── Hero mock data ──────────────────────────────────────────────────────────
+
+const MOCK_DISPATCH_LOGS = [
+  { email: 'john@stripe.com', status: 'Queued', time: 'Just now' },
+  { email: 'clara@vercel.com', status: 'Sent', time: '1m ago' },
+  { email: 'marcus@figma.com', status: 'Sent', time: '2m ago' },
+  { email: 'sarah@airbnb.com', status: 'Sent', time: '3m ago' }
+]
+
+const HERO_STEPS = [
+  { num: 'STEP 01', name: 'Connect SMTP', active: true },
+  { num: 'STEP 02', name: 'Personalize', active: false },
+  { num: 'STEP 03', name: 'Schedule Net', active: false }
+] as const
+
+interface TrustSignal {
+  icon: string
+  label: string
+  code: string | null
+}
+
+const TRUST_SIGNALS: TrustSignal[] = [
+  { icon: 'bi-google text-danger', label: 'Gmail Integration', code: null },
+  { icon: 'bi-shield-lock-fill text-primary', label: 'Supabase Vault', code: null },
+  { icon: 'bi-cpu-fill text-warning', label: 'Deno Edge Runtime', code: null },
+  { icon: 'bi-clock-history text-success', label: 'Scheduling', code: 'pg_cron' },
+]
+
+// ─── Utility ────────────────────────────────────────────────────────────────
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+/**
+ * Counter formatters live at module scope so their identity is stable: a new
+ * function on every render would restart the animation mid-flight.
+ */
+const formatInteger = (value: number) => String(value)
+const formatPercentTenths = (value: number) => `${(value / 10).toFixed(1)}%`
+
+// ─── Tilt Hook (cursor tracking, disabled under reduced motion) ──────────────
+
+function useTilt() {
+  const ref = useRef<HTMLDivElement>(null)
+  const mouseX = useSpring(0, { stiffness: 200, damping: 30 })
+  const mouseY = useSpring(0, { stiffness: 200, damping: 30 })
+
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], ['8deg', '-8deg'])
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], ['-8deg', '8deg'])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || prefersReducedMotion()) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect()
+      mouseX.set((e.clientX - rect.left) / rect.width - 0.5)
+      mouseY.set((e.clientY - rect.top) / rect.height - 0.5)
+    }
+    const handleMouseLeave = () => {
+      mouseX.set(0)
+      mouseY.set(0)
+    }
+
+    el.addEventListener('mousemove', handleMouseMove)
+    el.addEventListener('mouseleave', handleMouseLeave)
+    return () => {
+      el.removeEventListener('mousemove', handleMouseMove)
+      el.removeEventListener('mouseleave', handleMouseLeave)
+    }
+  }, [mouseX, mouseY])
+
+  return { ref, rotateX, rotateY }
+}
+
+const HERO_STAR_COUNT = 110
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
+export function HeroSection() {
+  const router = useRouter()
+  const [dispatchLogIdx, setDispatchLogIdx] = useState(0)
+  const [heroVisible, setHeroVisible] = useState(false)
+
+  const cardRef = useRef<HTMLDivElement | null>(null)
+  const heroRef = useRef<HTMLDivElement>(null)
+
+  const { ref: tiltRef, rotateX, rotateY } = useTilt()
+  const sentRef = useCounter(142, 1200, heroVisible, formatInteger)
+  const replyRef = useCounter(246, 1400, heroVisible, formatPercentTenths)
+  const inboxRef = useCounter(992, 1600, heroVisible, formatPercentTenths)
+
+  // ── Hero visibility (counters) ──
+  useEffect(() => {
+    const el = heroRef.current
+    if (!el || !('IntersectionObserver' in window)) {
+      setHeroVisible(true)
+      return
+    }
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setHeroVisible(true)
+    }, { threshold: 0.4 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  // ── Dispatch log rotation ──
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDispatchLogIdx((prev) => (prev + 1) % MOCK_DISPATCH_LOGS.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // ── GSAP atmosphere: entrance, aurora drift, orbits, pointer parallax ──
+  useGSAP(
+    () => {
+      const matchMedia = gsap.matchMedia()
+
+      matchMedia.add(
+        {
+          motionOK: '(prefers-reduced-motion: no-preference)',
+          finePointer: '(hover: hover) and (pointer: fine)'
+        },
+        (context) => {
+          const conditions = context.conditions ?? {}
+          if (!conditions.motionOK) return
+
+          // Hero title — SplitText masked line reveal (once, on load).
+          // autoSplit re-splits when the web font finishes loading; the tween
+          // returned from onSplit() is cleaned up and time-synced per re-split.
+          // A re-split after the reveal has started settles the lines instead of
+          // replaying them, which would flash the headline mid-animation.
+          let titleRevealed = false
+
+          const titleSplit = SplitText.create('.hero-title', {
+            type: 'lines',
+            mask: 'lines',
+            autoSplit: true,
+            onSplit: (self) => {
+              if (titleRevealed) {
+                gsap.set(self.lines, { yPercent: 0 })
+                return
+              }
+
+              return gsap.from(self.lines, {
+                yPercent: 110,
+                duration: 0.8,
+                stagger: 0.09,
+                ease: 'power3.out',
+                onStart: () => {
+                  titleRevealed = true
+                },
+              })
+            },
+          })
+
+          // Entrance — once, on load, top-down
+          gsap
+            .timeline({ defaults: { ease: 'power3.out', duration: 0.7 } })
+            .from('.hero-badge', { y: 16, autoAlpha: 0, duration: 0.55 }, 0)
+            .from(['.hero-lead', '.hero-actions'], { y: 24, autoAlpha: 0, stagger: 0.09 }, 0.1)
+            .from('.hero-step-item', { y: 18, autoAlpha: 0, stagger: 0.08, duration: 0.55 }, 0.22)
+            .from('.hero-mockup-entrance', { y: 32, scale: 0.97, autoAlpha: 0, duration: 0.85, ease: 'power2.out' }, 0.2)
+            .from('.hero-glow-ring', { autoAlpha: 0, duration: 1.4, ease: 'power1.inOut' }, 0.3)
+
+          // Aurora — large, slow, sine-driven drifts (8–16 s loops)
+          gsap.to('.hero-aurora-1', { xPercent: 12, yPercent: -8, scale: 1.12, duration: 13, ease: 'sine.inOut', repeat: -1, yoyo: true })
+          gsap.to('.hero-aurora-2', { xPercent: -10, yPercent: 9, scale: 1.08, duration: 16, ease: 'sine.inOut', repeat: -1, yoyo: true })
+          gsap.to('.hero-aurora-3', { xPercent: 8, yPercent: 6, duration: 10.5, ease: 'sine.inOut', repeat: -1, yoyo: true })
+
+          // Orbits — the dispatcher's two slow satellites
+          gsap.to('.hero-orbit-1', { rotation: 360, duration: 26, ease: 'none', repeat: -1 })
+          gsap.to('.hero-orbit-2', { rotation: -360, duration: 38, ease: 'none', repeat: -1 })
+
+          const cleanups: Array<() => void> = [() => titleSplit.revert()]
+
+          if (!conditions.finePointer) return () => cleanups.forEach((fn) => fn())
+
+          // Pointer parallax — one queued tween per layer, created once (quickTo)
+          const card = cardRef.current
+          if (!card) return () => cleanups.forEach((fn) => fn())
+
+          const layers = [
+            { el: card.querySelector<HTMLElement>('.hero-aurora-1'), depth: 12 },
+            { el: card.querySelector<HTMLElement>('.hero-aurora-2'), depth: 18 },
+            { el: card.querySelector<HTMLElement>('.hero-aurora-3'), depth: 8 },
+            { el: card.querySelector<HTMLElement>('.hero-stars'), depth: 6 }
+          ].filter((layer): layer is { el: HTMLElement, depth: number } => layer.el !== null)
+
+          const movers = layers.map(({ el, depth }) => ({
+            toX: gsap.quickTo(el, 'x', { duration: 0.8, ease: 'power2.out' }),
+            toY: gsap.quickTo(el, 'y', { duration: 0.8, ease: 'power2.out' }),
+            depth
+          }))
+
+          // A trackpad emits pointermove well above frame rate, and a burst
+          // used to mean one layout read plus four tween writes per event.
+          // Coalesce into one frame: measure once per burst, apply the latest
+          // position only.
+          let frame = 0
+          let pending: { x: number; y: number } | null = null
+          let rect: DOMRect | null = null
+          let rectDirty = true
+
+          const stageRect = () => {
+            if (!rect || rectDirty) {
+              rect = card.getBoundingClientRect()
+              rectDirty = false
+            }
+            return rect
+          }
+
+          const flush = () => {
+            frame = 0
+            const point = pending
+            pending = null
+            if (!point) return
+
+            const bounds = stageRect()
+            const nx = (point.x - bounds.left) / bounds.width - 0.5
+            const ny = (point.y - bounds.top) / bounds.height - 0.5
+            for (const mover of movers) {
+              mover.toX(nx * mover.depth * 2)
+              mover.toY(ny * mover.depth)
+            }
+          }
+
+          const onMove = (event: PointerEvent) => {
+            pending = { x: event.clientX, y: event.clientY }
+            if (frame === 0) frame = requestAnimationFrame(flush)
+          }
+          const onLeave = () => {
+            pending = null
+            if (frame !== 0) {
+              cancelAnimationFrame(frame)
+              frame = 0
+            }
+            for (const mover of movers) {
+              mover.toX(0)
+              mover.toY(0)
+            }
+          }
+
+          // Scrolling and resizing move the stage under the pointer, so the
+          // cached rect is invalidated rather than re-measured per event.
+          const invalidateRect = () => {
+            rectDirty = true
+          }
+
+          card.addEventListener('pointermove', onMove)
+          card.addEventListener('pointerleave', onLeave)
+          window.addEventListener('resize', invalidateRect)
+          window.addEventListener('scroll', invalidateRect, { passive: true })
+
+          cleanups.push(() => {
+            card.removeEventListener('pointermove', onMove)
+            card.removeEventListener('pointerleave', onLeave)
+            window.removeEventListener('resize', invalidateRect)
+            window.removeEventListener('scroll', invalidateRect)
+            if (frame !== 0) cancelAnimationFrame(frame)
+          })
+          return () => cleanups.forEach((fn) => fn())
+        }
+      )
+
+      return () => matchMedia.revert()
+    },
+    { scope: cardRef }
+  )
+
+  return (
+    <section
+      id="main-landing-content"
+      className="hero-fullscreen-stage hero-container-card"
+      ref={cardRef}
+    >
+      <div ref={heroRef} className="hero-atmosphere-anchor">
+        {/* ── Atmosphere ── */}
+        <div className="hero-cosmos" aria-hidden="true">
+          <StarfieldCanvas className="hero-stars" starCount={HERO_STAR_COUNT} />
+          <div className="hero-aurora hero-aurora-1" />
+          <div className="hero-aurora hero-aurora-2" />
+          <div className="hero-aurora hero-aurora-3" />
+          <div className="hero-vignette" />
+        </div>
+        <div className="hero-glow-ring" aria-hidden="true" />
+
+        <Container fluid="xl" className="hero-fullscreen-inner">
+          <Row className="align-items-center hero-content-grid">
+            {/* Vertical step indicators */}
+            <Col lg={2} className="d-none d-lg-block">
+              <div className="hero-steps-indicator">
+                {HERO_STEPS.map((step) => (
+                  <div key={step.num} className={`hero-step-item ${step.active ? 'active' : ''}`}>
+                    <div className="hero-step-num">{step.num}</div>
+                    <div className="hero-step-name">{step.name}</div>
+                  </div>
+                ))}
+              </div>
+            </Col>
+
+            {/* Hero copy */}
+            <Col lg={5} md={12} className="pe-lg-3 text-center text-lg-start">
+              <div>
+                <span className="lp-badge hero-badge mb-3">
+                  <i className="bi bi-rocket-takeoff-fill text-gradient" /> Deliverability First
+                </span>
+                <h1 className="hero-title mb-4">
+                  Reach Prospects' <span className="text-gradient">Inbox</span>, Not the Spam Folder.
+                </h1>
+                <p className="hero-lead mb-4 pb-2">
+                  Supercharge your cold outreach with automated sending delays, safe daily caps, and encrypted app password management. Built securely on Supabase.
+                </p>
+                <div className="hero-actions d-flex flex-wrap justify-content-center justify-content-lg-start align-items-center gap-3">
+                  <Button className="btn-lp-primary" onClick={() => router.push('/signup')}>
+                    Start Free Campaign
+                  </Button>
+                  <a href="#playground" className="btn-lp-outline btn-hero-secondary text-decoration-none">
+                    Try Personalization Tool
+                  </a>
+                </div>
+              </div>
+            </Col>
+
+            {/* Hero Mockup — floating in orbit */}
+            <Col lg={5} className="mt-5 mt-lg-0">
+              <div className="hero-mockup-stage">
+                <div className="hero-orbit hero-orbit-1" aria-hidden="true">
+                  <span className="hero-orbit-dot" />
+                </div>
+                <div className="hero-orbit hero-orbit-2" aria-hidden="true">
+                  <span className="hero-orbit-dot hero-orbit-dot-teal" />
+                </div>
+
+                <div className="hero-mockup-entrance">
+                  <motion.div
+                    className="hero-mockup-wrapper"
+                    ref={tiltRef as React.RefObject<HTMLDivElement>}
+                    style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 800 }}
+                  >
+                    <div className="hero-dispatcher-card">
+                      <div className="hero-dispatcher-header">
+                        <div className="d-flex align-items-center gap-2">
+                          <span className="hero-dispatcher-dot" aria-hidden="true" />
+                          <h6 className="hero-dispatcher-title mb-0">Campaign Dispatcher</h6>
+                        </div>
+                        <span className="hero-dispatcher-badge">Active</span>
+                      </div>
+
+                      {/* Animated stat counters */}
+                      <div className="hero-dispatcher-stats">
+                        <div className="hero-stat-cell">
+                          <div className="hero-stat-label">Sent</div>
+                          <strong className="hero-stat-value hero-stat-value-dark" ref={sentRef} />
+                        </div>
+                        <div className="hero-stat-cell">
+                          <div className="hero-stat-label">Replies</div>
+                          <strong className="hero-stat-value hero-stat-value-emerald" ref={replyRef} />
+                        </div>
+                        <div className="hero-stat-cell">
+                          <div className="hero-stat-label">Inbox Pl.</div>
+                          <strong className="hero-stat-value text-gradient" ref={inboxRef} />
+                        </div>
+                      </div>
+
+                      {/* Live dispatch log */}
+                      <div className="hero-terminal font-monospace">
+                        <div className="hero-terminal-header">
+                          <span>LIVE DISPATCH STATUS</span>
+                          <span className="spinner-border spinner-border-sm hero-terminal-spinner" role="status" />
+                        </div>
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={dispatchLogIdx}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
+                            className="hero-terminal-body"
+                          >
+                            <div className="hero-log-sent">✉️ Sent matching template!</div>
+                            <div className="hero-log-to">To: <span>{MOCK_DISPATCH_LOGS[dispatchLogIdx].email}</span></div>
+                            <div className="hero-log-status">Status: <span>{MOCK_DISPATCH_LOGS[dispatchLogIdx].status}</span></div>
+                            <div className="hero-log-meta font-monospace">Throttler delay: 60 seconds</div>
+                          </motion.div>
+                        </AnimatePresence>
+                      </div>
+
+                      {/* Floating security badge */}
+                      <motion.div
+                        className="hero-floating-banner"
+                        animate={{ y: [0, -6, 0] }}
+                        transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
+                      >
+                        <div className="floating-banner-icon">
+                          <i className="bi bi-shield-check" />
+                        </div>
+                        <div>
+                          <div className="floating-banner-title">Zero Plaintext Storage</div>
+                          <div className="floating-banner-subtitle">SMTP Passwords encrypted in Supabase Vault</div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+            </Col>
+          </Row>
+
+          {/* ── Integrated Bottom Console Trust Strip ── */}
+          <div className="hero-console-footer">
+            <div className="hero-trust-strip">
+              <span className="hero-trust-label">Secured With:</span>
+              <div className="hero-trust-items">
+                {TRUST_SIGNALS.map((item) => (
+                  <div key={item.label} className="hero-trust-item" data-motion="reveal-above-fold">
+                    <i className={`bi ${item.icon}`} />
+                    {item.code ? (
+                      <>
+                        <span className="hero-trust-pill">{item.code}</span> {item.label}
+                      </>
+                    ) : (
+                      item.label
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Container>
+      </div>
+    </section>
+  )
+}

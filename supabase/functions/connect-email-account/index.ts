@@ -29,7 +29,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) throw new Error('Missing Authorization header')
 
-    const token = authHeader.replace('Bearer ', '')
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
     if (userError || !user) throw new Error('Unauthorized')
 
@@ -39,13 +39,42 @@ serve(async (req) => {
       throw new Error('fromName, fromEmail, and appPassword are required')
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(String(fromEmail).trim())) {
+      throw new Error('Invalid fromEmail address')
+    }
+
+    const targetHost = (smtpHost || 'smtp.gmail.com').toLowerCase().trim()
+    const isForbiddenHost =
+      targetHost === 'localhost' ||
+      targetHost === '127.0.0.1' ||
+      targetHost === '0.0.0.0' ||
+      targetHost === '::1' ||
+      targetHost.endsWith('.local') ||
+      targetHost.endsWith('.internal') ||
+      targetHost === 'metadata.google.internal' ||
+      /^127\./.test(targetHost) ||
+      /^10\./.test(targetHost) ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(targetHost) ||
+      /^192\.168\./.test(targetHost) ||
+      /^169\.254\./.test(targetHost)
+
+    if (isForbiddenHost) {
+      throw new Error('Invalid SMTP host: private, internal, or loopback addresses are prohibited')
+    }
+
+    const targetPort = Number(smtpPort) || 587
+    if (![25, 465, 587, 2525].includes(targetPort)) {
+      throw new Error('Invalid SMTP port. Allowed ports are 25, 465, 587, 2525')
+    }
+
     // Validate SMTP with a test connection
     let testTransporter
     try {
       testTransporter = nodemailer.createTransport({
-        host: smtpHost || 'smtp.gmail.com',
-        port: smtpPort || 587,
-        secure: (smtpPort || 587) === 465,
+        host: targetHost,
+        port: targetPort,
+        secure: targetPort === 465,
         auth: { user: fromEmail, pass: appPassword },
       })
 

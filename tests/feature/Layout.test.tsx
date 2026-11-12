@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, act, fireEvent } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { Layout } from '../../src/components/Layout'
 import { ToastProvider } from '../../src/components/ToastProvider'
@@ -24,7 +24,7 @@ function renderLayout() {
       <ToastProvider>
         <MemoryRouter initialEntries={['/dashboard']}>
           <Routes>
-            <Route path="/" element={<Layout />}>
+            <Route path="/" element={<Layout><Outlet /></Layout>}>
               <Route path="dashboard" element={<p>page content</p>} />
             </Route>
           </Routes>

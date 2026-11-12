@@ -2,7 +2,7 @@ import { act, cleanup, render, screen, waitFor, within } from '@testing-library/
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { LandingNav } from '../../src/pages/landing/LandingNav'
+import { LandingNav } from '../../src/views/landing/LandingNav'
 
 /**
  * Landing nav contract:

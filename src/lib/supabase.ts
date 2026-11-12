@@ -1,22 +1,29 @@
 import { createClient } from '@supabase/supabase-js'
 
-const rawUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+/**
+ * Next.js only inlines *literal* `process.env.NEXT_PUBLIC_*` reads into the
+ * client bundle. A computed lookup such as `process.env[key]` survives to the
+ * browser, where `process.env` is empty, so every value must be read by name.
+ * The legacy `VITE_*` names are mapped onto these in `next.config.ts`.
+ */
+const configuredUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+const configuredAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
-function sanitizeSupabaseUrl(url: string): string {
-  if (!url || url.includes('<your-project-ref>')) {
-    return 'https://placeholder.supabase.co'
-  }
-  try {
-    new URL(url)
-    return url
-  } catch {
-    return 'https://placeholder.supabase.co'
-  }
+/**
+ * Static prerendering imports this module, and `createClient` throws on an
+ * empty URL. Unconfigured builds get an inert placeholder instead of failing;
+ * any request it makes fails visibly at runtime.
+ */
+const PLACEHOLDER_URL = 'https://placeholder.supabase.co'
+const PLACEHOLDER_KEY = 'placeholder-anon-key'
+
+function isUsableUrl(value: string): boolean {
+  if (!value || value.includes('<')) return false
+  return URL.canParse(value)
 }
 
-const supabaseUrl = sanitizeSupabaseUrl(rawUrl)
-const supabaseAnonKey =
-  rawKey && !rawKey.includes('<your-anon-key>') ? rawKey : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder'
+export const SUPABASE_URL = (isUsableUrl(configuredUrl) ? configuredUrl : PLACEHOLDER_URL).replace(/\/+$/, '')
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const anonKey = configuredAnonKey && !configuredAnonKey.includes('<') ? configuredAnonKey : PLACEHOLDER_KEY
+
+export const supabase = createClient(SUPABASE_URL, anonKey)
