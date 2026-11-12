@@ -13,6 +13,10 @@ export interface ApiErrorPayload {
   readonly message: string
   readonly reference_id?: string
   readonly errors?: Record<string, string[]>
+  readonly debug?: {
+    readonly actual_message?: string
+    readonly stack?: string
+  }
 }
 
 export interface ApiErrorEnvelope {
@@ -86,9 +90,18 @@ export function createApiErrorEnvelope(
   const defaultMeta = DEFAULT_ERROR_MESSAGES[status] ?? DEFAULT_ERROR_MESSAGES[500]
   const code = codeOverride ?? (typeof errObj?.code === 'string' ? errObj.code : defaultMeta.code)
 
+  const isDev = process.env.NODE_ENV === 'development'
+
   // Only allow custom messages if explicitly flagged as operational or for client 4xx errors
   let message: string
-  if (status < 500 && typeof errObj?.message === 'string' && errObj.message.trim().length > 0) {
+  if (isDev && status >= 500) {
+    // In development mode, surface actual unhandled server exceptions for instant debugging
+    message = error instanceof Error
+      ? error.message
+      : typeof errObj?.message === 'string'
+        ? errObj.message
+        : defaultMeta.message
+  } else if (status < 500 && typeof errObj?.message === 'string' && errObj.message.trim().length > 0) {
     message = errObj.message
   } else if (errObj?.isOperational && typeof errObj?.message === 'string' && errObj.message.trim().length > 0) {
     message = errObj.message
@@ -113,12 +126,21 @@ export function createApiErrorEnvelope(
     ? (errObj.errors as Record<string, string[]>)
     : undefined
 
+  // Development debug telemetry (strictly omitted in production)
+  const debug = isDev
+    ? {
+        actual_message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      }
+    : undefined
+
   const payload: ApiErrorPayload = {
     status,
     code,
     message,
     ...(referenceId ? { reference_id: referenceId } : {}),
     ...(errors ? { errors } : {}),
+    ...(debug ? { debug } : {}),
   }
 
   return { error: payload }

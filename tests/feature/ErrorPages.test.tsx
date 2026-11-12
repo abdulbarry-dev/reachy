@@ -100,4 +100,60 @@ describe('Error Pages Suite — Acceptance & Security Verification', () => {
     expect(screen.queryByRole('link', { name: 'Reachy Home' })).not.toBeInTheDocument()
     expect(screen.getByText('500 / SERVER ERROR')).toBeInTheDocument()
   })
+
+  it('in development mode, renders DevErrorView with raw error and allows toggling to production preview', async () => {
+    const originalEnv = process.env.NODE_ENV
+    const resetFn = vi.fn()
+    const user = userEvent.setup()
+
+    try {
+      process.env.NODE_ENV = 'development'
+      const devCrash = new TypeError('Cannot access variable foo before initialization')
+      devCrash.stack = 'TypeError: Cannot access variable foo\n    at CampaignView (src/CampaignView.tsx:50:12)'
+
+      const { rerender } = render(
+        <RootError error={devCrash} reset={resetFn} />,
+      )
+
+      // Actual raw error rendered for developer in dev mode
+      expect(screen.getByText('DEVELOPMENT ERROR OVERLAY')).toBeInTheDocument()
+      expect(screen.getByText('TypeError')).toBeInTheDocument()
+      expect(
+        screen.getByText('Cannot access variable foo before initialization'),
+      ).toBeInTheDocument()
+      expect(screen.getByText(/at CampaignView \(src\/CampaignView\.tsx:50:12\)/)).toBeInTheDocument()
+
+      // Toggle to production preview
+      const previewBtn = screen.getByRole('button', { name: /Preview Production Error Page/i })
+      await user.click(previewBtn)
+
+      // Now renders production ErrorView
+      expect(screen.getByText('500 / SERVER ERROR')).toBeInTheDocument()
+      expect(screen.getByText('Unexpected Application Error')).toBeInTheDocument()
+
+      // Toggle back to dev diagnostics
+      const toggleBackBtn = screen.getByRole('button', { name: /Switch to Dev Error Diagnostics/i })
+      await user.click(toggleBackBtn)
+      expect(screen.getByText('DEVELOPMENT ERROR OVERLAY')).toBeInTheDocument()
+
+      rerender(<div />)
+    } finally {
+      process.env.NODE_ENV = originalEnv
+    }
+  })
+
+  it('in development mode, DashboardError renders compact dev diagnostics with actual error message', () => {
+    const originalEnv = process.env.NODE_ENV
+    try {
+      process.env.NODE_ENV = 'development'
+      const error = new RangeError('Index out of bounds in recipient grid')
+      render(<DashboardError error={error} reset={vi.fn()} />)
+
+      expect(screen.getByText('DEVELOPMENT ERROR OVERLAY')).toBeInTheDocument()
+      expect(screen.getByText('RangeError')).toBeInTheDocument()
+      expect(screen.getByText('Index out of bounds in recipient grid')).toBeInTheDocument()
+    } finally {
+      process.env.NODE_ENV = originalEnv
+    }
+  })
 })

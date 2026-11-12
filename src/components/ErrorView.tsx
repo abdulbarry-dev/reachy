@@ -26,6 +26,8 @@ export interface ErrorViewProps {
   readonly onReset?: () => void
   /** Render full-page centered canvas (true) or compact nested card for layouts (false). Defaults to true. */
   readonly fullPage?: boolean
+  /** Callback to switch back to development error view when in dev mode */
+  readonly onToggleDevView?: () => void
 }
 
 function getBadgeVariantClass(code: number): { badgeClass: string; iconBgClass: string; iconColor: string } {
@@ -67,6 +69,7 @@ export function ErrorView({
   primaryCtaLabel: propPrimaryCtaLabel,
   onReset,
   fullPage = true,
+  onToggleDevView,
 }: ErrorViewProps) {
   const [copied, setCopied] = useState(false)
   const copyFeedbackId = useId()
@@ -118,6 +121,21 @@ export function ErrorView({
       role="alert"
       aria-live="assertive"
     >
+      {/* Dev Environment Toggle Back to Diagnostics */}
+      {onToggleDevView ? (
+        <div className="mb-3 d-flex justify-content-center">
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 rounded-3 py-1 px-3"
+            onClick={onToggleDevView}
+            style={{ fontSize: '0.8125rem', fontWeight: 600 }}
+          >
+            <i className="bi bi-code-slash" aria-hidden="true" />
+            <span>Switch to Dev Error Diagnostics</span>
+          </button>
+        </div>
+      ) : null}
+
       {/* Status Badge */}
       <div className="mb-3 d-flex justify-content-center">
         <span
@@ -241,6 +259,29 @@ export function ErrorView({
           </button>
         ) : null}
       </div>
+
+      {/* Dev Diagnostics (Only rendered in development mode) */}
+      {process.env.NODE_ENV === 'development' && error ? (
+        <details
+          className="mt-4 text-start border rounded-3 p-3"
+          style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }}
+        >
+          <summary className="fw-semibold text-secondary small" style={{ cursor: 'pointer' }}>
+            🛠️ Development Details (Hidden in Production)
+          </summary>
+          <div className="mt-2 text-danger fw-bold small" style={{ wordBreak: 'break-word' }}>
+            {error instanceof Error ? `${error.name}: ${error.message}` : String(error)}
+          </div>
+          {error instanceof Error && error.stack ? (
+            <pre
+              className="mt-2 p-2 bg-dark text-light rounded small mb-0"
+              style={{ fontSize: '0.75rem', maxHeight: 200, overflowY: 'auto', whiteSpace: 'pre-wrap' }}
+            >
+              <code>{error.stack}</code>
+            </pre>
+          ) : null}
+        </details>
+      ) : null}
     </div>
   )
 

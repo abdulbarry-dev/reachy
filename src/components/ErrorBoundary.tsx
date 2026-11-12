@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { ErrorView } from './ErrorView'
+import { DevErrorView } from './DevErrorView'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -9,6 +10,8 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   error: Error | null
+  info: ErrorInfo | null
+  showProductionPreview: boolean
 }
 
 /**
@@ -26,17 +29,21 @@ function isChunkLoadError(error: Error) {
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { error: null }
+  state: ErrorBoundaryState = {
+    error: null,
+    info: null,
+    showProductionPreview: false,
+  }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { error }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // Keep stack strictly in dev console, never in DOM or user-facing state
     if (process.env.NODE_ENV === 'development') {
       console.error('Unhandled render error', error, info.componentStack)
     }
+    this.setState({ info })
   }
 
   private handleRetry = () => {
@@ -46,14 +53,27 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       ;(this.props.onReload ?? (() => window.location.reload()))()
       return
     }
-    this.setState({ error: null })
+    this.setState({ error: null, info: null, showProductionPreview: false })
   }
 
   render() {
-    const { error } = this.state
+    const { error, info, showProductionPreview } = this.state
     if (!error) return this.props.children
 
+    const isDev = process.env.NODE_ENV === 'development'
     const chunkFailure = isChunkLoadError(error)
+
+    if (isDev && !showProductionPreview) {
+      return (
+        <DevErrorView
+          error={error}
+          componentStack={info?.componentStack}
+          onReset={this.handleRetry}
+          onTogglePreview={() => this.setState({ showProductionPreview: true })}
+          fullPage={false}
+        />
+      )
+    }
 
     return (
       <ErrorView
@@ -68,6 +88,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         primaryCtaLabel={chunkFailure ? 'Reload page' : 'Try again'}
         onReset={this.handleRetry}
         fullPage={false}
+        onToggleDevView={isDev ? () => this.setState({ showProductionPreview: false }) : undefined}
       />
     )
   }

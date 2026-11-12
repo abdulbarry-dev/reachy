@@ -74,4 +74,21 @@ describe('api-error exception hardening', () => {
     expect(body.error.status).toBe(500)
     expect(body.error.reference_id).toMatch(/^ref_[a-f0-9]{16}$/)
   })
+
+  it('exposes actual error message and debug stack when in development mode', () => {
+    const originalEnv = process.env.NODE_ENV
+    try {
+      process.env.NODE_ENV = 'development'
+      const devError = new Error('Syntax error at internal/dev/test.ts:15')
+      devError.stack = 'Error: Syntax error\n    at internal/dev/test.ts:15:10'
+
+      const envelope = createApiErrorEnvelope(devError)
+      expect(envelope.error.message).toBe('Syntax error at internal/dev/test.ts:15')
+      expect(envelope.error.debug).toBeDefined()
+      expect(envelope.error.debug?.actual_message).toBe('Syntax error at internal/dev/test.ts:15')
+      expect(envelope.error.debug?.stack).toContain('internal/dev/test.ts:15:10')
+    } finally {
+      process.env.NODE_ENV = originalEnv
+    }
+  })
 })
