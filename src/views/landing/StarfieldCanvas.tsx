@@ -21,6 +21,7 @@ interface Star {
   phase: number
   drift: number
   hue: 'star' | 'mint' | 'teal'
+  sparkle: boolean
 }
 
 const STAR_HUE_RGB = {
@@ -31,15 +32,17 @@ const STAR_HUE_RGB = {
 
 function createStar(width: number, height: number, seededAnywhere: boolean): Star {
   const hueRoll = Math.random()
+  const isSparkle = Math.random() < 0.09
   return {
     x: Math.random() * width,
     y: seededAnywhere ? Math.random() * height : height + 4,
-    size: 0.6 + Math.random() * 1.7,
-    alpha: 0.2 + Math.random() * 0.55,
+    size: isSparkle ? 1.8 + Math.random() * 1.4 : 0.6 + Math.random() * 1.5,
+    alpha: isSparkle ? 0.45 + Math.random() * 0.45 : 0.2 + Math.random() * 0.55,
     twinkleSpeed: 0.6 + Math.random() * 1.4,
     phase: Math.random() * Math.PI * 2,
     drift: 0.08 + Math.random() * 0.32,
-    hue: hueRoll < 0.72 ? 'star' : hueRoll < 0.9 ? 'mint' : 'teal'
+    hue: hueRoll < 0.72 ? 'star' : hueRoll < 0.9 ? 'mint' : 'teal',
+    sparkle: isSparkle
   }
 }
 
@@ -88,9 +91,22 @@ export function StarfieldCanvas({ className, starCount = 110 }: StarfieldCanvasP
         const twinkle = reduced ? 1 : 0.55 + 0.45 * Math.sin(time * star.twinkleSpeed + star.phase)
         ctx.globalAlpha = star.alpha * twinkle
         ctx.fillStyle = `rgba(${STAR_HUE_RGB[star.hue]}, 1)`
-        ctx.beginPath()
-        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2)
-        ctx.fill()
+        if (star.sparkle) {
+          const r = star.size * 2.4
+          const c = star.size * 0.42
+          ctx.beginPath()
+          ctx.moveTo(star.x, star.y - r)
+          ctx.quadraticCurveTo(star.x + c, star.y - c, star.x + r, star.y)
+          ctx.quadraticCurveTo(star.x + c, star.y + c, star.x, star.y + r)
+          ctx.quadraticCurveTo(star.x - c, star.y + c, star.x - r, star.y)
+          ctx.quadraticCurveTo(star.x - c, star.y - c, star.x, star.y - r)
+          ctx.closePath()
+          ctx.fill()
+        } else {
+          ctx.beginPath()
+          ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2)
+          ctx.fill()
+        }
       }
       ctx.globalAlpha = 1
     }

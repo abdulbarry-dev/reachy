@@ -94,10 +94,17 @@ describe('HeroSection', () => {
     await expectVisibleSoon(() => screen.getByText(/deliverability first/i))
   })
 
-  it('renders the dispatcher mockup with its live log', async () => {
-    renderHero()
+  it('renders the dispatcher mockup with its live log and semantic surfaces', async () => {
+    const { container } = renderHero()
     await expectVisibleSoon(() => screen.getByText(/campaign dispatcher/i))
     expect(screen.getByText(/live dispatch status/i)).toBeInTheDocument()
+    expect(screen.getByText('Active')).toBeInTheDocument()
+    expect(screen.getByText('Sent')).toBeInTheDocument()
+    expect(screen.getByText('Replies')).toBeInTheDocument()
+    expect(screen.getByText('Inbox Pl.')).toBeInTheDocument()
+    expect(container.querySelector('.hero-dispatcher-card')).not.toBeNull()
+    expect(container.querySelector('.hero-terminal')).not.toBeNull()
+    expect(container.querySelector('.btn-hero-secondary')).not.toBeNull()
   })
 
   it('keeps the vault guarantee visible', async () => {
@@ -129,6 +136,15 @@ describe('HeroSection', () => {
     await expectVisibleSoon(() => screen.getByText(/connect smtp/i))
     expect(screen.getByText(/personalize/i)).toBeInTheDocument()
     expect(screen.getByText(/schedule net/i)).toBeInTheDocument()
+  })
+
+  it('renders the integrated bottom console trust strip', async () => {
+    renderHero()
+    await expectVisibleSoon(() => screen.getByText(/secured with:/i))
+    expect(screen.getByText(/gmail integration/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/supabase vault/i).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText(/deno edge runtime/i)).toBeInTheDocument()
+    expect(screen.getByText(/scheduling/i)).toBeInTheDocument()
   })
 
   it('shows content immediately when reduced motion is requested', async () => {

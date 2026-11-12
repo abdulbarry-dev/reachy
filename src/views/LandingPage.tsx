@@ -12,7 +12,6 @@ import {
   LandingFooter,
   PlaygroundSection,
   SplitSection,
-  TrustStripSection,
   WorkflowSection,
 } from './landing/sections'
 import { useLandingScroll } from './landing/useLandingScroll'
@@ -71,7 +70,6 @@ export function LandingPage() {
 
       <LandingNav user={!!user} activeSection={activeSection} />
       <HeroSection />
-      <TrustStripSection />
       <FeaturesSection />
       <PlaygroundSection />
       <WorkflowSection />

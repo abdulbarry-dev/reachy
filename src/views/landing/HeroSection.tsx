@@ -26,6 +26,19 @@ const HERO_STEPS = [
   { num: 'STEP 03', name: 'Schedule Net', active: false }
 ] as const
 
+interface TrustSignal {
+  icon: string
+  label: string
+  code: string | null
+}
+
+const TRUST_SIGNALS: TrustSignal[] = [
+  { icon: 'bi-google text-danger', label: 'Gmail Integration', code: null },
+  { icon: 'bi-shield-lock-fill text-primary', label: 'Supabase Vault', code: null },
+  { icon: 'bi-cpu-fill text-warning', label: 'Deno Edge Runtime', code: null },
+  { icon: 'bi-clock-history text-success', label: 'Scheduling', code: 'pg_cron' },
+]
+
 // ─── Utility ────────────────────────────────────────────────────────────────
 
 function prefersReducedMotion(): boolean {
@@ -271,148 +284,166 @@ export function HeroSection() {
   )
 
   return (
-    <section id="main-landing-content" className="lp-section pt-5 pb-5">
-      <Container className="pt-5 mt-4">
-        <div className="hero-container-card" ref={cardRef}>
-          <div ref={heroRef} className="hero-atmosphere-anchor">
-            {/* ── Atmosphere ── */}
-            <div className="hero-cosmos" aria-hidden="true">
-              <StarfieldCanvas className="hero-stars" starCount={HERO_STAR_COUNT} />
-              <div className="hero-aurora hero-aurora-1" />
-              <div className="hero-aurora hero-aurora-2" />
-              <div className="hero-aurora hero-aurora-3" />
-              <div className="hero-vignette" />
-            </div>
-            <div className="hero-glow-ring" aria-hidden="true" />
-
-            <Row className="align-items-center hero-content-grid">
-              {/* Vertical step indicators */}
-              <Col lg={2} className="d-none d-lg-block">
-                <div className="hero-steps-indicator">
-                  {HERO_STEPS.map((step) => (
-                    <div key={step.num} className={`hero-step-item ${step.active ? 'active' : ''}`}>
-                      <div className="hero-step-num">{step.num}</div>
-                      <div className="hero-step-name">{step.name}</div>
-                    </div>
-                  ))}
-                </div>
-              </Col>
-
-              {/* Hero copy */}
-              <Col lg={6} md={12} className="pe-lg-4 text-center text-lg-start">
-                <div>
-                  <span className="lp-badge hero-badge mb-3">
-                    <i className="bi bi-rocket-takeoff-fill text-gradient" /> Deliverability First
-                  </span>
-                  <h1 className="hero-title mb-4">
-                    Reach Prospects' <span className="text-gradient">Inbox</span>, Not the Spam Folder.
-                  </h1>
-                  <p className="hero-lead mb-4 pb-2">
-                    Supercharge your cold outreach with automated sending delays, safe daily caps, and encrypted app password management. Built securely on Supabase.
-                  </p>
-                  <div className="hero-actions d-flex flex-wrap justify-content-center justify-content-lg-start align-items-center gap-3">
-                    <Button className="btn-lp-primary" onClick={() => router.push('/signup')}>
-                      Start Free Campaign
-                    </Button>
-                    <a href="#playground" className="btn-lp-outline text-decoration-none">
-                      Try Personalization Tool
-                    </a>
-                  </div>
-                </div>
-              </Col>
-
-              {/* Hero Mockup — floating in orbit */}
-              <Col lg={4} className="mt-5 mt-lg-0">
-                <div className="hero-mockup-stage">
-                  <div className="hero-orbit hero-orbit-1" aria-hidden="true">
-                    <span className="hero-orbit-dot" />
-                  </div>
-                  <div className="hero-orbit hero-orbit-2" aria-hidden="true">
-                    <span className="hero-orbit-dot hero-orbit-dot-teal" />
-                  </div>
-
-                  <div className="hero-mockup-entrance">
-                    <motion.div
-                      className="hero-mockup-wrapper"
-                      ref={tiltRef as React.RefObject<HTMLDivElement>}
-                      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 800 }}
-                    >
-                      <div className="bg-white border rounded-4 shadow p-4 border-light position-relative">
-                        <div className="d-flex align-items-center justify-content-between border-bottom pb-3 mb-3">
-                          <div className="d-flex align-items-center gap-2">
-                            <span className="d-block bg-primary rounded-circle" style={{ width: 10, height: 10 }} />
-                            <h6 className="mb-0 fw-bold" style={{ fontSize: '0.9rem' }}>Campaign Dispatcher</h6>
-                          </div>
-                          <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Active</span>
-                        </div>
-
-                        {/* Animated stat counters */}
-                        <div className="row g-2 text-center mb-3">
-                          <div className="col-4">
-                            <div className="bg-light p-2 rounded border border-light-subtle">
-                              <div className="text-muted small">Sent</div>
-                              <strong className="text-dark" ref={sentRef} />
-                            </div>
-                          </div>
-                          <div className="col-4">
-                            <div className="bg-light p-2 rounded border border-light-subtle">
-                              <div className="text-muted small">Replies</div>
-                              <strong className="text-success" ref={replyRef} />
-                            </div>
-                          </div>
-                          <div className="col-4">
-                            <div className="bg-light p-2 rounded border border-light-subtle">
-                              <div className="text-muted small">Inbox Pl.</div>
-                              <strong className="text-gradient" ref={inboxRef} />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Live dispatch log */}
-                        <div className="bg-dark text-white rounded p-3 font-monospace" style={{ fontSize: '0.8rem', minHeight: 110 }}>
-                          <div className="text-secondary border-bottom border-secondary pb-1 mb-2 d-flex justify-content-between">
-                            <span>LIVE DISPATCH STATUS</span>
-                            <span className="spinner-border spinner-border-sm text-success" role="status" />
-                          </div>
-                          <AnimatePresence mode="wait">
-                            <motion.div
-                              key={dispatchLogIdx}
-                              initial={{ opacity: 0, y: 6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -6 }}
-                              transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
-                            >
-                              <div className="text-success">✉️ Sent matching template!</div>
-                              <div className="text-light">To: {MOCK_DISPATCH_LOGS[dispatchLogIdx].email}</div>
-                              <div className="text-warning">Status: {MOCK_DISPATCH_LOGS[dispatchLogIdx].status}</div>
-                              <div className="text-secondary small font-monospace">Throttler delay: 60 seconds</div>
-                            </motion.div>
-                          </AnimatePresence>
-                        </div>
-
-                        {/* Floating security badge */}
-                        <motion.div
-                          className="hero-floating-banner"
-                          animate={{ y: [0, -8, 0] }}
-                          transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
-                        >
-                          <div className="floating-banner-icon">
-                            <i className="bi bi-shield-check" />
-                          </div>
-                          <div>
-                            <div className="fw-bold small">Zero Plaintext Storage</div>
-                            <div className="text-muted small" style={{ fontSize: '0.75rem' }}>SMTP Passwords encrypted in Supabase Vault</div>
-                          </div>
-                        </motion.div>
-                      </div>
-                    </motion.div>
-                  </div>
-                </div>
-              </Col>
-            </Row>
-          </div>
+    <section
+      id="main-landing-content"
+      className="hero-fullscreen-stage hero-container-card"
+      ref={cardRef}
+    >
+      <div ref={heroRef} className="hero-atmosphere-anchor">
+        {/* ── Atmosphere ── */}
+        <div className="hero-cosmos" aria-hidden="true">
+          <StarfieldCanvas className="hero-stars" starCount={HERO_STAR_COUNT} />
+          <div className="hero-aurora hero-aurora-1" />
+          <div className="hero-aurora hero-aurora-2" />
+          <div className="hero-aurora hero-aurora-3" />
+          <div className="hero-vignette" />
         </div>
-      </Container>
+        <div className="hero-glow-ring" aria-hidden="true" />
+
+        <Container fluid="xl" className="hero-fullscreen-inner">
+          <Row className="align-items-center hero-content-grid">
+            {/* Vertical step indicators */}
+            <Col lg={2} className="d-none d-lg-block">
+              <div className="hero-steps-indicator">
+                {HERO_STEPS.map((step) => (
+                  <div key={step.num} className={`hero-step-item ${step.active ? 'active' : ''}`}>
+                    <div className="hero-step-num">{step.num}</div>
+                    <div className="hero-step-name">{step.name}</div>
+                  </div>
+                ))}
+              </div>
+            </Col>
+
+            {/* Hero copy */}
+            <Col lg={5} md={12} className="pe-lg-3 text-center text-lg-start">
+              <div>
+                <span className="lp-badge hero-badge mb-3">
+                  <i className="bi bi-rocket-takeoff-fill text-gradient" /> Deliverability First
+                </span>
+                <h1 className="hero-title mb-4">
+                  Reach Prospects' <span className="text-gradient">Inbox</span>, Not the Spam Folder.
+                </h1>
+                <p className="hero-lead mb-4 pb-2">
+                  Supercharge your cold outreach with automated sending delays, safe daily caps, and encrypted app password management. Built securely on Supabase.
+                </p>
+                <div className="hero-actions d-flex flex-wrap justify-content-center justify-content-lg-start align-items-center gap-3">
+                  <Button className="btn-lp-primary" onClick={() => router.push('/signup')}>
+                    Start Free Campaign
+                  </Button>
+                  <a href="#playground" className="btn-lp-outline btn-hero-secondary text-decoration-none">
+                    Try Personalization Tool
+                  </a>
+                </div>
+              </div>
+            </Col>
+
+            {/* Hero Mockup — floating in orbit */}
+            <Col lg={5} className="mt-5 mt-lg-0">
+              <div className="hero-mockup-stage">
+                <div className="hero-orbit hero-orbit-1" aria-hidden="true">
+                  <span className="hero-orbit-dot" />
+                </div>
+                <div className="hero-orbit hero-orbit-2" aria-hidden="true">
+                  <span className="hero-orbit-dot hero-orbit-dot-teal" />
+                </div>
+
+                <div className="hero-mockup-entrance">
+                  <motion.div
+                    className="hero-mockup-wrapper"
+                    ref={tiltRef as React.RefObject<HTMLDivElement>}
+                    style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 800 }}
+                  >
+                    <div className="hero-dispatcher-card">
+                      <div className="hero-dispatcher-header">
+                        <div className="d-flex align-items-center gap-2">
+                          <span className="hero-dispatcher-dot" aria-hidden="true" />
+                          <h6 className="hero-dispatcher-title mb-0">Campaign Dispatcher</h6>
+                        </div>
+                        <span className="hero-dispatcher-badge">Active</span>
+                      </div>
+
+                      {/* Animated stat counters */}
+                      <div className="hero-dispatcher-stats">
+                        <div className="hero-stat-cell">
+                          <div className="hero-stat-label">Sent</div>
+                          <strong className="hero-stat-value hero-stat-value-dark" ref={sentRef} />
+                        </div>
+                        <div className="hero-stat-cell">
+                          <div className="hero-stat-label">Replies</div>
+                          <strong className="hero-stat-value hero-stat-value-emerald" ref={replyRef} />
+                        </div>
+                        <div className="hero-stat-cell">
+                          <div className="hero-stat-label">Inbox Pl.</div>
+                          <strong className="hero-stat-value text-gradient" ref={inboxRef} />
+                        </div>
+                      </div>
+
+                      {/* Live dispatch log */}
+                      <div className="hero-terminal font-monospace">
+                        <div className="hero-terminal-header">
+                          <span>LIVE DISPATCH STATUS</span>
+                          <span className="spinner-border spinner-border-sm hero-terminal-spinner" role="status" />
+                        </div>
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={dispatchLogIdx}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
+                            className="hero-terminal-body"
+                          >
+                            <div className="hero-log-sent">✉️ Sent matching template!</div>
+                            <div className="hero-log-to">To: <span>{MOCK_DISPATCH_LOGS[dispatchLogIdx].email}</span></div>
+                            <div className="hero-log-status">Status: <span>{MOCK_DISPATCH_LOGS[dispatchLogIdx].status}</span></div>
+                            <div className="hero-log-meta font-monospace">Throttler delay: 60 seconds</div>
+                          </motion.div>
+                        </AnimatePresence>
+                      </div>
+
+                      {/* Floating security badge */}
+                      <motion.div
+                        className="hero-floating-banner"
+                        animate={{ y: [0, -6, 0] }}
+                        transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
+                      >
+                        <div className="floating-banner-icon">
+                          <i className="bi bi-shield-check" />
+                        </div>
+                        <div>
+                          <div className="floating-banner-title">Zero Plaintext Storage</div>
+                          <div className="floating-banner-subtitle">SMTP Passwords encrypted in Supabase Vault</div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+            </Col>
+          </Row>
+
+          {/* ── Integrated Bottom Console Trust Strip ── */}
+          <div className="hero-console-footer">
+            <div className="hero-trust-strip">
+              <span className="hero-trust-label">Secured With:</span>
+              <div className="hero-trust-items">
+                {TRUST_SIGNALS.map((item) => (
+                  <div key={item.label} className="hero-trust-item" data-motion="reveal-above-fold">
+                    <i className={`bi ${item.icon}`} />
+                    {item.code ? (
+                      <>
+                        <span className="hero-trust-pill">{item.code}</span> {item.label}
+                      </>
+                    ) : (
+                      item.label
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Container>
+      </div>
     </section>
   )
 }

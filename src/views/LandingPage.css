@@ -95,11 +95,45 @@
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
+/* When at top of page over full-screen dark hero cosmos */
+.lp-navbar:not(.is-scrolled) .lp-brand {
+  color: #ffffff !important;
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-link {
+  color: #cbd5e1;
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-link:hover,
+.lp-navbar:not(.is-scrolled) .lp-nav-link[aria-current='true'] {
+  color: #ffffff;
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-link::after {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-link[aria-current='true']::after {
+  background-color: var(--lp-primary);
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-login {
+  color: #cbd5e1;
+}
+
+.lp-navbar:not(.is-scrolled) .lp-nav-login:hover {
+  color: #ffffff;
+}
+
+.lp-navbar:not(.is-scrolled) .lp-mobile-menu-btn {
+  color: #ffffff;
+}
+
 .lp-navbar.is-scrolled {
-  background-color: rgba(255, 255, 255, 0.86);
+  background-color: rgba(255, 255, 255, 0.88);
   -webkit-backdrop-filter: blur(14px) saturate(1.2);
   backdrop-filter: blur(14px) saturate(1.2);
-  border-bottom-color: rgba(15, 23, 42, 0.07);
+  border-bottom-color: rgba(15, 23, 42, 0.08);
 }
 
 .lp-navbar-inner {
@@ -554,18 +588,21 @@
   justify-content: space-around;
   flex-wrap: wrap;
   gap: 2rem;
-  opacity: 0.65;
-  padding: 1.5rem 0;
-  border-top: 1px dashed rgba(15, 23, 42, 0.08);
-  border-bottom: 1px dashed rgba(15, 23, 42, 0.08);
+  opacity: 0.92;
+  padding: 1.35rem 1.5rem;
+  background-color: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(58, 179, 151, 0.14);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03);
 }
 .logo-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--lp-slate-700);
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  color: var(--lp-dark-slate);
 }
 /* Inline code pill used for technical identifiers like pg_cron */
 .logo-code-pill {
