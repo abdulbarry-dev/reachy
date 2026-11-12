@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { PlaygroundSection } from '../../src/pages/landing/sections/PlaygroundSection'
+import { PlaygroundSection } from '../../src/views/landing/sections/PlaygroundSection'
 
 /**
  * Inserting a merge variable must leave the caret directly after the inserted

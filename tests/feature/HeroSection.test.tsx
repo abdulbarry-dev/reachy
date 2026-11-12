@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { HeroSection } from '../../src/pages/landing/HeroSection'
+import { HeroSection } from '../../src/views/landing/HeroSection'
 
 /**
  * Hero contract:

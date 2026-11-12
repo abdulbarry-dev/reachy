@@ -23,7 +23,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) throw new Error('Missing Authorization header')
 
-    const token = authHeader.replace('Bearer ', '')
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
     if (userError || !user) throw new Error('Unauthorized')
 
@@ -43,8 +43,10 @@ serve(async (req) => {
     } = await req.json()
 
     // Clamp rate limits server-side (must stay under Gmail thresholds)
-    const clampedSendRate = Math.max(30, sendRateSeconds)
-    const clampedDailyCap = Math.max(1, Math.min(90, dailyCap))
+    const parsedSendRate = Number(sendRateSeconds)
+    const parsedDailyCap = Number(dailyCap)
+    const clampedSendRate = Number.isFinite(parsedSendRate) ? Math.max(30, Math.floor(parsedSendRate)) : 60
+    const clampedDailyCap = Number.isFinite(parsedDailyCap) ? Math.max(1, Math.min(90, Math.floor(parsedDailyCap))) : 90
 
     if (!emailAccountId || !name || !subjectTemplate || !bodyTemplate || !Array.isArray(recipients)) {
       throw new Error('emailAccountId, name, subjectTemplate, bodyTemplate, and recipients are required')
@@ -52,6 +54,13 @@ serve(async (req) => {
 
     if (recipients.length === 0) {
       throw new Error('At least one recipient is required')
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    for (const r of recipients) {
+      if (!r || typeof r.email !== 'string' || !emailRegex.test(r.email.trim())) {
+        throw new Error(`Invalid recipient email: ${String(r?.email ?? '')}`)
+      }
     }
 
     // Verify the email account belongs to the user
@@ -93,13 +102,17 @@ serve(async (req) => {
       const chunk = recipients.slice(i, i + chunkSize)
       const rows = chunk.map((r) => ({
         campaign_id: campaignId,
-        email: r.email,
-        name: r.name || null,
-        variables: { ...(r.variables || {}), ...(r.company ? { company: r.company } : {}) },
+        email: r.email.trim().toLowerCase(),
+        name: r.name ? String(r.name).trim() : null,
+        variables: { ...(r.variables || {}), ...(r.company ? { company: String(r.company).trim() } : {}) },
       }))
 
       const { error: insertError } = await supabase.from('recipients').insert(rows)
-      if (insertError) throw new Error(`Recipient insert error: ${insertError.message}`)
+      if (insertError) {
+        // Roll back the campaign (cascades to any inserted recipient chunks)
+        await supabase.from('campaigns').delete().eq('id', campaignId)
+        throw new Error(`Recipient insert error: ${insertError.message}`)
+      }
       inserted += chunk.length
     }
 

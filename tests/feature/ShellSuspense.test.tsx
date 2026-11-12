@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { lazy } from 'react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { Layout } from '../../src/components/Layout'
 import { ToastProvider } from '../../src/components/ToastProvider'
@@ -25,7 +25,7 @@ describe('app shell while a page chunk loads', () => {  it('keeps the sidebar an
         <ToastProvider>
           <MemoryRouter initialEntries={['/recipients']}>
             <Routes>
-              <Route path="/" element={<Layout />}>
+              <Route path="/" element={<Layout><Outlet /></Layout>}>
                 <Route path="recipients" element={<NeverReady />} />
               </Route>
             </Routes>
@@ -53,7 +53,7 @@ describe('app shell while a page chunk loads', () => {  it('keeps the sidebar an
         <ToastProvider>
           <MemoryRouter initialEntries={['/dashboard']}>
             <Routes>
-              <Route path="/" element={<Layout />}>
+              <Route path="/" element={<Layout><Outlet /></Layout>}>
                 <Route path="dashboard" element={<Crashing />} />
                 <Route path="recipients" element={<p>recipients ok</p>} />
               </Route>

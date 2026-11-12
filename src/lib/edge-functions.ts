@@ -1,17 +1,11 @@
-import { supabase } from './supabase'
+import { SUPABASE_URL, supabase } from './supabase'
 
 export function getEdgeFunctionUrl(name: string): string {
-  const base = import.meta.env.VITE_SUPABASE_URL?.replace(/\/+$/, '') ?? ''
-  return `${base}/functions/v1/${name}`
+  return `${SUPABASE_URL}/functions/v1/${name}`
 }
 
 /**
  * Posts to an Edge Function as the signed-in user and returns its JSON body.
- *
- * Every call site needs the same four steps — read the session, send the
- * bearer token, turn a non-2xx response into an `Error` carrying the function's
- * own `error` message, and decode the body. They were copied into three pages,
- * which meant three slightly different copy of the error handling.
  *
  * @param name   Function slug, e.g. `create-campaign`.
  * @param payload JSON request body.

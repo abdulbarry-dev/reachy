@@ -10,19 +10,23 @@ export type AppState = {
   recipients: ReturnType<typeof recipientsReducer>
 }
 
-export const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    recipients: recipientsReducer,
-  },
-  // Hydrate once from storage; the slice itself stays pure.
-  preloadedState: {
-    recipients: { items: loadRecipients() },
-  },
-  // Persist after any recipient mutation; reducers never touch storage.
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().prepend(createRecipientsPersistence<AppState>().middleware),
-})
+export const makeStore = () =>
+  configureStore({
+    reducer: {
+      auth: authReducer,
+      recipients: recipientsReducer,
+    },
+    // Hydrate once from storage; the slice itself stays pure.
+    preloadedState: {
+      recipients: { items: loadRecipients() },
+    },
+    // Persist after any recipient mutation; reducers never touch storage.
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware().prepend(createRecipientsPersistence<AppState>().middleware),
+  })
+
+export type AppStore = ReturnType<typeof makeStore>
+export const store = makeStore()
 
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch

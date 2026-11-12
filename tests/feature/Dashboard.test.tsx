@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { Provider } from 'react-redux'
-import { Dashboard } from '../../src/pages/Dashboard'
+import { Dashboard } from '../../src/views/Dashboard'
 import { store } from '../../src/store'
 import type { CampaignWithCounts } from '../../src/types'
 

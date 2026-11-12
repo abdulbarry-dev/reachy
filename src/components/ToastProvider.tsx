@@ -209,8 +209,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   // re-render when the toast function itself changes, which it never does.
   const contextValue = useMemo<ToastContextValue>(() => ({ toast: addToast }), [addToast])
 
+  // Dev-only console hook for poking toasts by hand; stripped from production.
   useEffect(() => {
-    if (!import.meta.env.DEV) return
+    if (process.env.NODE_ENV === 'production') return
     const w = window as unknown as { __reachyToast?: typeof addToast }
     w.__reachyToast = addToast
     return () => {

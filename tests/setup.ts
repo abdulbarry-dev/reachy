@@ -77,3 +77,79 @@ if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
   })
 }
 
+import { createElement, type AnchorHTMLAttributes, type MouseEvent } from 'react'
+import * as ReactRouter from 'react-router-dom'
+import { vi } from 'vitest'
+
+vi.mock('next/link', () => {
+  function MockNextLink({
+    href,
+    onClick,
+    children,
+    ...rest
+  }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) {
+    let rrNav: ReturnType<typeof ReactRouter.useNavigate> | null = null
+    try {
+      rrNav = ReactRouter.useNavigate()
+    } catch {
+      // Not inside a MemoryRouter; plain anchor behavior suffices.
+    }
+    const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
+      onClick?.(e)
+      if (!e.defaultPrevented && rrNav && typeof href === 'string' && href.startsWith('/')) {
+        e.preventDefault()
+        rrNav(href)
+      }
+    }
+    return createElement('a', { href, onClick: handleClick, ...rest }, children)
+  }
+  return { default: MockNextLink }
+})
+
+vi.mock('next/navigation', () => {
+  return {
+    useRouter: () => {
+      let rrNav: any = null
+      try {
+        rrNav = ReactRouter.useNavigate()
+      } catch {}
+      return {
+        push: (to: string) => {
+          if (rrNav) rrNav(to)
+          else window.history.pushState({}, '', to)
+        },
+        replace: (to: string) => {
+          if (rrNav) rrNav(to, { replace: true })
+          else window.history.replaceState({}, '', to)
+        },
+        back: () => (rrNav ? rrNav(-1) : window.history.back()),
+        prefetch: vi.fn(),
+        refresh: vi.fn(),
+      }
+    },
+    usePathname: () => {
+      try {
+        return ReactRouter.useLocation().pathname
+      } catch {
+        return window.location.pathname || '/'
+      }
+    },
+    useSearchParams: () => {
+      try {
+        const [params] = ReactRouter.useSearchParams()
+        return params
+      } catch {
+        return new URLSearchParams(window.location.search)
+      }
+    },
+    useParams: () => {
+      try {
+        return ReactRouter.useParams()
+      } catch {
+        return {}
+      }
+    },
+  }
+})
+
+

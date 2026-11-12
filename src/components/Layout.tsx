@@ -1,6 +1,9 @@
-import { useState, useCallback, Suspense } from 'react'
+'use client'
+
+import { useState, useCallback, Suspense, type ReactNode } from 'react'
 import { Container, Stack } from 'react-bootstrap'
-import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { usePathname, useRouter } from 'next/navigation'
+import { NavLink } from './Navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
 import { signOut } from '../store/authSlice'
@@ -16,17 +19,17 @@ const SIDEBAR_EXPANDED = 260
 const SIDEBAR_COLLAPSED = 72
 
 const mainLinks = [
-  { to: '/dashboard', label: 'Dashboard', icon: 'bi-speedometer2', end: true },
-  { to: '/recipients', label: 'Recipients', icon: 'bi-people', end: false },
-  { to: '/compose', label: 'Compose', icon: 'bi-envelope-paper', end: false },
+  { href: '/dashboard', label: 'Dashboard', icon: 'bi-speedometer2', exact: true },
+  { href: '/recipients', label: 'Recipients', icon: 'bi-people', exact: false },
+  { href: '/compose', label: 'Compose', icon: 'bi-envelope-paper', exact: false },
 ]
 
-const bottomLink = { to: '/settings', label: 'Settings', icon: 'bi-gear', end: false }
+const bottomLink = { href: '/settings', label: 'Settings', icon: 'bi-gear', exact: false }
 
-export function Layout() {
+export function Layout({ children }: { children: ReactNode }) {
   const dispatch = useDispatch<AppDispatch>()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const router = useRouter()
+  const pathname = usePathname()
   const user = useSelector((state: RootState) => state.auth.user)
   const { toast } = useToast()
   const [collapsed, setCollapsed] = useState(false)
@@ -51,7 +54,7 @@ export function Layout() {
     const result = await dispatch(signOut())
     if (signOut.fulfilled.match(result)) {
       toast('Signed out successfully', 'info')
-      navigate('/login', { replace: true })
+      router.replace('/login')
     } else {
       toast('Failed to sign out', 'error')
     }
@@ -116,9 +119,9 @@ export function Layout() {
         <nav className="sidebar-nav" aria-label="Main navigation">
           {mainLinks.map((link) => (
             <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.end}
+              key={link.href}
+              href={link.href}
+              exact={link.exact}
               className="sidebar-link"
               onClick={closeMobile}
             >
@@ -142,8 +145,8 @@ export function Layout() {
 
         <div className="sidebar-bottom">
           <NavLink
-            to={bottomLink.to}
-            end={bottomLink.end}
+            href={bottomLink.href}
+            exact={bottomLink.exact}
             className="sidebar-link"
             onClick={closeMobile}
           >
@@ -222,9 +225,9 @@ export function Layout() {
           {/* The shell stays mounted while a page chunk loads or a page crashes.
               Keyed by route so navigating away clears a caught error without
               remounting anything above the outlet. */}
-          <ErrorBoundary key={location.pathname}>
+          <ErrorBoundary key={pathname}>
             <Suspense fallback={<PageFallback variant="inline" />}>
-              <Outlet />
+              {children}
             </Suspense>
           </ErrorBoundary>
         </main>
