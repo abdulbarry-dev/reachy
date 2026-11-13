@@ -8,8 +8,6 @@ import { LogoSvg } from './LogoSvg'
 
 /** Scroll distance before the bar takes on its frosted surface. */
 const SETTLE_AT_PX = 24
-/** Distance from hero bottom where the dawn horizon morphs into daylight frosted glass. */
-const LIGHT_TRANSITION_TRIGGER_PX = 180
 
 export interface LandingNavProps {
   /** A session exists — the auth actions become a dashboard link. */
@@ -19,64 +17,20 @@ export interface LandingNavProps {
 }
 
 /**
- * Landing header — Context-Aware Chameleon (Option 1).
+ * Landing header — crisp daylight navigation over the white/soft-mint hero.
  *
- * It adapts dynamically to the section currently passing beneath it:
- * - Over dark hero stage (0px): 100% transparent with white text & mint indicators.
- * - Scrolling inside dark hero (>24px up to hero exit): Deep-space dark glass
- *   HUD with frosted blur, mint hairline, and crisp white typography.
- * - Scrolling into light content sections (Features, Playground, etc.): Seamlessly
- *   interpolates to light daylight frosted glass with slate typography.
+ * - At rest (scrollY <= 24px): transparent with slate typography.
+ * - Scrolled (> 24px): frosted white glass with subtle slate hairline & shadow.
  */
 export function LandingNav({ user, activeSection }: LandingNavProps) {
   const [settled, setSettled] = useState(false)
-  const [inLightSection, setInLightSection] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const closeDrawer = useCallback(() => setDrawerOpen(false), [])
 
   useEffect(() => {
-    let lastInLight = false
-
     const onScroll = () => {
       const scrollY = typeof window !== 'undefined' ? window.scrollY : 0
-
-      // STRICT TOP GUARD: When at the top of the page (or during rubber-band overscroll <= 0),
-      // the navbar is ALWAYS 100% transparent with white/mint typography over the dark hero cosmos.
-      // It must NEVER flip to light theme or dark text at the top.
-      if (scrollY <= SETTLE_AT_PX) {
-        setSettled(false)
-        setInLightSection(false)
-        lastInLight = false
-        return
-      }
-
-      setSettled(true)
-
-      // Detect whether the navbar is currently over a light content section.
-      // We inspect the bottom boundary of the hero section relative to the dawn dissolve horizon.
-      // Hysteresis buffer (40px) prevents any single-pixel toggling or flicker on boundaries.
-      const heroEl = document.getElementById('main-landing-content')
-      if (heroEl) {
-        const rect = heroEl.getBoundingClientRect()
-        if (lastInLight) {
-          // Returning back up into dark hero body
-          if (rect.bottom > LIGHT_TRANSITION_TRIGGER_PX + 40) {
-            lastInLight = false
-            setInLightSection(false)
-          }
-        } else {
-          // Crossing dawn horizon down into light content sections
-          if (rect.bottom <= LIGHT_TRANSITION_TRIGGER_PX) {
-            lastInLight = true
-            setInLightSection(true)
-          }
-        }
-      } else {
-        // Fallback: estimate viewport height if hero element isn't in DOM
-        const fallbackLight = scrollY > (window.innerHeight || 800) - LIGHT_TRANSITION_TRIGGER_PX
-        lastInLight = fallbackLight
-        setInLightSection(fallbackLight)
-      }
+      setSettled(scrollY > SETTLE_AT_PX)
     }
 
     onScroll()
@@ -102,7 +56,7 @@ export function LandingNav({ user, activeSection }: LandingNavProps) {
     }
   }, [drawerOpen, closeDrawer])
 
-  const themeClass = inLightSection ? 'nav-theme-light' : 'nav-theme-dark'
+  const themeClass = 'nav-theme-light'
   const scrolledClass = settled ? 'is-scrolled' : ''
 
   return (

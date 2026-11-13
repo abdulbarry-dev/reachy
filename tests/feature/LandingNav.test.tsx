@@ -79,33 +79,17 @@ describe('LandingNav', () => {
   it('takes on its solid surface once content passes under it', () => {
     const { container } = renderNav()
     const nav = container.querySelector('.lp-navbar')
-    expect(nav).toHaveClass('nav-theme-dark')
+    expect(nav).toHaveClass('nav-theme-light')
     expect(nav).not.toHaveClass('is-scrolled')
 
-    // Scrolled while still in dark hero: dark frosted HUD
+    // Scrolled past SETTLE_AT_PX: light frosted glass surface
     act(() => scrollTo(120))
     expect(nav).toHaveClass('is-scrolled')
-    expect(nav).toHaveClass('nav-theme-dark')
-    expect(nav).not.toHaveClass('nav-theme-light')
+    expect(nav).toHaveClass('nav-theme-light')
+    expect(nav).not.toHaveClass('nav-theme-dark')
   })
 
-  it('switches to light surface theme when scrolled into light sections', () => {
-    // Stub hero element returning top < -800
-    const heroMock = document.createElement('section')
-    heroMock.id = 'main-landing-content'
-    document.body.appendChild(heroMock)
-    vi.spyOn(heroMock, 'getBoundingClientRect').mockReturnValue({
-      top: -900,
-      bottom: -10,
-      height: 890,
-      width: 1440,
-      left: 0,
-      right: 1440,
-      x: 0,
-      y: -900,
-      toJSON: () => ({}),
-    } as DOMRect)
-
+  it('keeps light surface theme when scrolled into lower sections', () => {
     const { container } = renderNav()
     const nav = container.querySelector('.lp-navbar')
 
@@ -113,57 +97,20 @@ describe('LandingNav', () => {
     expect(nav).toHaveClass('is-scrolled')
     expect(nav).toHaveClass('nav-theme-light')
     expect(nav).not.toHaveClass('nav-theme-dark')
-
-    heroMock.remove()
   })
 
-  it('remains strictly in dark theme and transparent at top or during upward overscroll', () => {
-    const heroMock = document.createElement('section')
-    heroMock.id = 'main-landing-content'
-    document.body.appendChild(heroMock)
-    const rectSpy = vi.spyOn(heroMock, 'getBoundingClientRect').mockReturnValue({
-      top: 0,
-      bottom: 800,
-      height: 800,
-      width: 1440,
-      left: 0,
-      right: 1440,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
-    } as DOMRect)
-
+  it('remains strictly in light theme and transparent at top or during upward overscroll', () => {
     const { container } = renderNav()
     const nav = container.querySelector('.lp-navbar')
 
-    // At top (scrollY 0): dark theme, not scrolled
-    expect(nav).toHaveClass('nav-theme-dark')
+    // At top (scrollY 0): light theme, not scrolled
+    expect(nav).toHaveClass('nav-theme-light')
     expect(nav).not.toHaveClass('is-scrolled')
 
     // Rubber-band overscroll (scrollY <= 0 or scrollY < SETTLE_AT_PX)
     act(() => scrollTo(-15))
-    expect(nav).toHaveClass('nav-theme-dark')
-    expect(nav).not.toHaveClass('nav-theme-light')
+    expect(nav).toHaveClass('nav-theme-light')
     expect(nav).not.toHaveClass('is-scrolled')
-
-    // Even if rect.bottom is momentarily <= 72 during layout recalculation
-    rectSpy.mockReturnValue({
-      top: -50,
-      bottom: 50,
-      height: 100,
-      width: 1440,
-      left: 0,
-      right: 1440,
-      x: 0,
-      y: -50,
-      toJSON: () => ({}),
-    } as DOMRect)
-    act(() => scrollTo(0))
-    expect(nav).toHaveClass('nav-theme-dark')
-    expect(nav).not.toHaveClass('nav-theme-light')
-    expect(nav).not.toHaveClass('is-scrolled')
-
-    heroMock.remove()
   })
 
   it('keeps both auth actions reachable when signed out', () => {

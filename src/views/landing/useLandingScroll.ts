@@ -164,7 +164,8 @@ function maskRevealHeadings(root: HTMLElement): SplitText[] {
       autoSplit: true,
       onSplit: (split) => {
         if (revealed.has(heading)) {
-          return gsap.set(split.lines, { yPercent: 0 })
+          gsap.set(split.lines, { yPercent: 0 })
+          return
         }
 
         return gsap.from(split.lines, {

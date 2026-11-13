@@ -18,7 +18,7 @@ export default function GlobalError({
   const isDev = process.env.NODE_ENV === 'development'
 
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body
         style={{
           margin: 0,

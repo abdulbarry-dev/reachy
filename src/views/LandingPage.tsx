@@ -34,23 +34,6 @@ export function LandingPage() {
   const landingRef = useRef<HTMLDivElement>(null)
   const progressBarRef = useRef<HTMLDivElement>(null)
 
-  // ── Sync root html & body background to deep-space cosmos #070a12 on landing ──
-  // Prevents any rubber-band / overscroll bounce from flashing light background
-  useEffect(() => {
-    const htmlEl = document.documentElement
-    const bodyEl = document.body
-    const originalHtmlBg = htmlEl.style.backgroundColor
-    const originalBodyBg = bodyEl.style.backgroundColor
-
-    htmlEl.style.backgroundColor = '#070a12'
-    bodyEl.style.backgroundColor = '#070a12'
-
-    return () => {
-      htmlEl.style.backgroundColor = originalHtmlBg
-      bodyEl.style.backgroundColor = originalBodyBg
-    }
-  }, [])
-
   // ── Active section via IntersectionObserver ──
   useEffect(() => {
     const observer = new IntersectionObserver(

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { LandingPage } from '../views/LandingPage'
 
 export const viewport: Viewport = {
-  themeColor: '#070a12',
+  themeColor: '#ffffff',
 }
 
 export const metadata: Metadata = {

@@ -74,7 +74,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={plusJakartaSans.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={plusJakartaSans.variable}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <body className={plusJakartaSans.className} suppressHydrationWarning>
         <ClientProviders>{children}</ClientProviders>
       </body>

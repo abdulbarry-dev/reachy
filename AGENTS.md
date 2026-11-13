@@ -24,6 +24,22 @@ Next.js 16 (App Router) + React 19 + TypeScript 6 + Redux Toolkit + Supabase + B
 
 Linter is `oxlint` — no ESLint config. TypeScript has `noUnusedLocals`/`noUnusedParameters` enabled and `verbatimModuleSyntax` (use `import type`).
 
+## Token Efficiency & File Reading Policy
+
+> **MANDATORY FOR ALL AI AGENTS**:
+> Keep context focused and token usage minimal by reading only project-authored source and configuration files.
+>
+> - **NEVER read, search (`grep`/`rg`), or inspect inside**:
+>   - `node_modules/` (external package implementations, `.js`/`.mjs` bundles, or compiled types)
+>   - `.next/` (dev/build artifacts, manifests, caches, traces, compiled chunks)
+>   - `dist/`, `build/`, `out/`, `.turbo/`, `.vercel/` (generated build outputs)
+>   - `coverage/`, `reports/` (generated coverage and Lighthouse report outputs)
+>   - `package-lock.json`, `*.tsbuildinfo`, minified/generated assets, or `.git/` internals
+> - **ONLY read what is required for the task**:
+>   - Application code under `src/`, edge functions/migrations under `supabase/`, and tests under `tests/`
+>   - Targeted project config and authority files (`package.json`, `tsconfig*.json`, `next.config.ts`, `DESIGN.md`, `AGENTS.md`) — reading only the relevant line ranges rather than whole files when large
+> - **Use targeted search first**: Always exclude ignored/generated directories when searching (e.g., search within `src/` and `tests/` only), and inspect external library APIs via TypeScript diagnostics or official docs rather than reading `node_modules/`.
+
 ## Design System & Typography Authority (`DESIGN.md`)
 
 > **MANDATORY FOR ALL AI AGENTS**:

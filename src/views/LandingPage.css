@@ -13,11 +13,10 @@
   --lp-glow: rgba(58, 179, 151, 0.15);
 }
 
-/* Ensure the canvas behind and above the dark hero matches deep-space cosmos #070a12,
-   completely eliminating any white overscroll gap when pulling past the top */
+/* Keep html/body canvas crisp white behind landing overscroll */
 html:has(.landing-wrapper),
 html:has(.landing-wrapper) body {
-  background-color: #070a12 !important;
+  background-color: #ffffff !important;
   overscroll-behavior-y: none;
 }
 
@@ -31,7 +30,7 @@ html:has(.landing-wrapper) body {
   overscroll-behavior-y: none;
 }
 
-/* Seamless cosmos underlay extending 200vh above the hero to guarantee zero white gap */
+/* Seamless white underlay extending above the hero to prevent dark/gray overscroll gaps */
 .landing-wrapper::before {
   content: '';
   position: absolute;
@@ -39,7 +38,7 @@ html:has(.landing-wrapper) body {
   left: 0;
   right: 0;
   height: 200vh;
-  background-color: #070a12;
+  background-color: #ffffff;
   pointer-events: none;
   z-index: 0;
 }

@@ -2,7 +2,6 @@ import { startTransition, useCallback, useRef, useState } from 'react'
 import { Col, Container, Row, Button } from 'react-bootstrap'
 import { useRouter } from 'next/navigation'
 import { gsap, ScrollTrigger, SplitText, useGSAP } from '../../lib/gsap'
-import { StarfieldCanvas } from './StarfieldCanvas'
 import { useCounter } from './useCounter'
 import './landingHero.css'
 
@@ -48,7 +47,6 @@ const TRUST_SIGNALS: readonly TrustSignal[] = [
 const formatInteger = (value: number) => String(value)
 const formatPercentTenths = (value: number) => `${(value / 10).toFixed(1)}%`
 
-const HERO_STAR_COUNT = 105
 const DISPATCH_CYCLE_SECONDS = 3.8
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -77,37 +75,11 @@ export function HeroSection() {
 
   // ── Unified GSAP Choreography: entrance timeline, live console loop, parallax ──
   useGSAP(
-    (_context, contextSafe) => {
-      const safe = contextSafe ?? ((fn) => fn)
-
-      // Context-safe interactive step selector (also callable when reduced-motion is on)
-      stepSelectHandlerRef.current = safe((nextStepIdx: number) => {
+    () => {
+      stepSelectHandlerRef.current = (nextStepIdx: number) => {
         setActiveStepIdx(nextStepIdx)
         setDispatchLogIdx(nextStepIdx % MOCK_DISPATCH_LOGS.length)
-
-        const bodyEl = terminalBodyRef.current
-        const progressEl = terminalProgressRef.current
-        const reduced =
-          typeof window !== 'undefined' &&
-          typeof window.matchMedia === 'function' &&
-          window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-        if (reduced || !bodyEl) return
-
-        gsap.killTweensOf(bodyEl)
-        gsap.fromTo(
-          bodyEl,
-          { autoAlpha: 0, y: 6 },
-          { autoAlpha: 1, y: 0, duration: 0.28, ease: 'power3.out', overwrite: true },
-        )
-        if (progressEl) {
-          gsap.fromTo(
-            progressEl,
-            { scaleX: 0 },
-            { scaleX: 1, duration: DISPATCH_CYCLE_SECONDS, ease: 'none', overwrite: true },
-          )
-        }
-      })
+      }
 
       const matchMedia = gsap.matchMedia()
 
@@ -116,7 +88,9 @@ export function HeroSection() {
           motionOK: '(prefers-reduced-motion: no-preference)',
           finePointer: '(hover: hover) and (pointer: fine)',
         },
-        (context) => {
+        (context, mmContextSafe) => {
+          const mmSafe = <T extends (...args: never[]) => unknown>(fn: T): T =>
+            mmContextSafe ? (mmContextSafe(fn) as T) : fn
           const conditions = context.conditions ?? {}
           if (!conditions.motionOK) return
 
@@ -129,7 +103,8 @@ export function HeroSection() {
             autoSplit: true,
             onSplit: (self) => {
               if (titleRevealed) {
-                return gsap.set(self.lines, { yPercent: 0 })
+                gsap.set(self.lines, { yPercent: 0 })
+                return
               }
 
               return gsap.from(self.lines, {
@@ -207,22 +182,31 @@ export function HeroSection() {
           const progressEl = terminalProgressRef.current
           const bodyEl = terminalBodyRef.current
 
-          const advanceDispatchLog = safe(() => {
-            if (!bodyEl) return
+          const advanceDispatchLog = mmSafe(() => {
+            if (!bodyEl) {
+              setDispatchLogIdx((prev) => (prev + 1) % MOCK_DISPATCH_LOGS.length)
+              setActiveStepIdx((prev) => (prev + 1) % HERO_STEPS.length)
+              return
+            }
+            gsap.killTweensOf(bodyEl)
             gsap.to(bodyEl, {
               autoAlpha: 0,
               y: -5,
               duration: 0.16,
               ease: 'power2.in',
-              onComplete: () => {
-                setDispatchLogIdx((prev) => {
-                  const next = (prev + 1) % MOCK_DISPATCH_LOGS.length
-                  return next
-                })
+              overwrite: true,
+              onComplete: mmSafe(() => {
+                setDispatchLogIdx((prev) => (prev + 1) % MOCK_DISPATCH_LOGS.length)
                 setActiveStepIdx((prev) => (prev + 1) % HERO_STEPS.length)
                 gsap.set(bodyEl, { autoAlpha: 0, y: 6 })
-                gsap.to(bodyEl, { autoAlpha: 1, y: 0, duration: 0.3, ease: 'power3.out' })
-              },
+                gsap.to(bodyEl, {
+                  autoAlpha: 1,
+                  y: 0,
+                  duration: 0.3,
+                  ease: 'power3.out',
+                  overwrite: true,
+                })
+              }),
             })
           })
 
@@ -233,8 +217,31 @@ export function HeroSection() {
             scaleX: 1,
             duration: DISPATCH_CYCLE_SECONDS,
             ease: 'none',
-            repeat: -1,
-            onRepeat: advanceDispatchLog,
+            onComplete: () => {
+              advanceDispatchLog()
+              if (progressEl) {
+                gsap.set(progressEl, { scaleX: 0 })
+              }
+              cycleTween.restart?.()
+            },
+          })
+
+          stepSelectHandlerRef.current = mmSafe((nextStepIdx: number) => {
+            setActiveStepIdx(nextStepIdx)
+            setDispatchLogIdx(nextStepIdx % MOCK_DISPATCH_LOGS.length)
+
+            if (bodyEl) {
+              gsap.killTweensOf(bodyEl)
+              gsap.fromTo(
+                bodyEl,
+                { autoAlpha: 0, y: 6 },
+                { autoAlpha: 1, y: 0, duration: 0.28, ease: 'power3.out', overwrite: true },
+              )
+            }
+            if (progressEl) {
+              gsap.set(progressEl, { scaleX: 0 })
+            }
+            cycleTween.restart?.()
           })
 
           const card = cardRef.current
@@ -293,7 +300,7 @@ export function HeroSection() {
             { el: card.querySelector<HTMLElement>('.hero-aurora-1'), depth: 12 },
             { el: card.querySelector<HTMLElement>('.hero-aurora-2'), depth: 18 },
             { el: card.querySelector<HTMLElement>('.hero-aurora-3'), depth: 8 },
-            { el: card.querySelector<HTMLElement>('.hero-stars'), depth: 6 },
+            { el: card.querySelector<HTMLElement>('.hero-grid-overlay'), depth: 6 },
           ].filter((layer): layer is { el: HTMLElement; depth: number } => layer.el !== null)
 
           const movers = layers.map(({ el, depth }) => ({
@@ -382,7 +389,6 @@ export function HeroSection() {
       <div className="hero-atmosphere-anchor">
         {/* ── Atmosphere ── */}
         <div className="hero-cosmos" aria-hidden="true">
-          <StarfieldCanvas className="hero-stars" starCount={HERO_STAR_COUNT} />
           <div className="hero-aurora hero-aurora-1" />
           <div className="hero-aurora hero-aurora-2" />
           <div className="hero-aurora hero-aurora-3" />
